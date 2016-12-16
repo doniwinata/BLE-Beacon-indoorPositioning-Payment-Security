@@ -16,6 +16,28 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name="com.example.idsl.blepayment.BeaconListActivity"
+            android:label="Select Beacon"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name="com.example.idsl.blepayment.MapPosActivity"
+            android:label="Map of User"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name="com.example.idsl.blepayment.SingleBeaconActivity"
+            android:label="Single Beacon Activity"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name="com.example.idsl.blepayment.PaymentProcess"
+            android:label="Payment Process"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name="com.example.idsl.blepayment.PaymentProcessApi18"
+            android:label="Payment Process"
+            android:screenOrientation="portrait"/>
+
     </application>
 
 </manifest>

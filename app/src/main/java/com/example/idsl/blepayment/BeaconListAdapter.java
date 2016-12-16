@@ -3,6 +3,7 @@ package com.example.idsl.blepayment;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,6 +32,7 @@ public class BeaconListAdapter extends BaseAdapter {
     private HashMap<Integer, ArrayList<Double>> distances = new HashMap<Integer, ArrayList<Double>>();
 
     public BeaconListAdapter(Context context) {
+
         this.inflater = LayoutInflater.from(context);
         this.beacons = new ArrayList<Beacon>();
         preferences = PreferenceManager.getDefaultSharedPreferences(context);
@@ -81,7 +83,7 @@ public class BeaconListAdapter extends BaseAdapter {
         distanceArray.add(dist);
 
         // This way it only remembers the last measured distances.
-        if (distanceArray.size() > 100) {
+        if (distanceArray.size() > 10) {
             distanceArray.remove(0);
         }
 

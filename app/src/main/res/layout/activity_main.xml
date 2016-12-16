@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:weightSum="1">
 
     <TextView android:text="@string/formal_app_name"
         android:layout_width="match_parent"
@@ -26,7 +27,7 @@
         android:text="@string/info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/info_button" />
+        android:id="@+id/payment_activity" />
 
     <Button
         android:text="@string/measure_button"
@@ -34,15 +35,32 @@
         android:layout_height="wrap_content"
         android:id="@+id/single_measure" />
 
-    <TableLayout android:id="@+id/table_distance"
-        android:orientation="vertical"
+    <TableLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:stretchColumns="1">
+        android:id="@+id/table_distance"
+        android:layout_height="246dp">
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+
+            <TextView
+                android:text="TextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/show_result2" />
+        </TableRow>
+
+        <TableRow
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
 
     </TableLayout>
+
     <TextView android:id="@+id/show_result"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_weight="1.57" />
 
 </LinearLayout>

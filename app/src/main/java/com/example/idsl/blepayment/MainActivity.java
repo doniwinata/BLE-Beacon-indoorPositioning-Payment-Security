@@ -3,6 +3,7 @@ package com.example.idsl.blepayment;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
@@ -93,33 +94,29 @@ public class MainActivity extends AppCompatActivity {
         });
 
         final TableLayout distanceTable = (TableLayout) findViewById(R.id.table_distance);
-        final TableLayout.LayoutParams paramTableRow = new TableLayout.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.WRAP_CONTENT);
+        final TableLayout.LayoutParams paramTableRow = new TableLayout.LayoutParams(TableRow.LayoutParams.MATCH_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT);
         paramTableRow.setMargins(50, 0, 0, 0);
-        final ViewGroup.LayoutParams paramTextView = new TableLayout.LayoutParams(0,ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        final TableRow.LayoutParams paramTextView = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT, 1f);
 
-        //set button to show info
-        final Button infoButton = (Button) findViewById(R.id.info_button);
-        infoButton.setOnClickListener(new View.OnClickListener(){
+        //go to payment
+        final Button payment = (Button) findViewById(R.id.payment_activity);
+        payment.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                distanceTable.removeAllViews();
+                Intent paymentIntent = new Intent(MainActivity.this, PaymentProcess.class);
 
-                TableRow textRow = new TableRow(MainActivity.this);
-                textRow.setLayoutParams(paramTableRow);
-
-                TextView infoText = new TextView(MainActivity.this);
-                infoText.setLayoutParams(paramTextView);
-
-                infoText.setText("\nUUID: The ID of a beacon. They all have the same value " +
-                        "at production." + "\n\nMajor/Minor: 5 Digit identifier for the beacon. This " +
-                        "identifies only by the minor." + "\n\nRSSI: Received Signal Strength Indicator. This, together " +
-                        "measured power calculates the distance through a algorithm." + "\n\nMeasured Power: The RSSI " +
-                        "at a distance of 1 meter." + "\n\n\nThe distance is calculated through the median of a certain" +
-                        "amount of measurements.");
-                textRow.addView(infoText);
-                distanceTable.addView(textRow);
-
-
+//                if(Build.VERSION.SDK_INT < 21){
+//                    paymentIntent = new Intent(MainActivity.this, PaymentProcessApi18.class);
+//
+//                }
+                    try {
+                    beaconManager.stopRanging(ALL_ESTIMOTE_BEACONS_REGION);
+                } catch (Exception e) {
+                }
+                editPref.putBoolean("intent_stop", false);
+                editPref.commit();
+                startActivity(paymentIntent);
             }
         });
 
