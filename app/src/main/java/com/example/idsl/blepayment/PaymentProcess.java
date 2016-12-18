@@ -1,11 +1,13 @@
 package com.example.idsl.blepayment;
 
 import android.annotation.TargetApi;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
@@ -20,10 +22,12 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 
 import com.estimote.sdk.BeaconManager;
@@ -44,11 +48,11 @@ public class PaymentProcess extends AppCompatActivity {
     private static final Region ALL_ESTIMOTE_BEACONS_REGION = new Region("rid", null, null, null);
 
     private Button paymentButton;
-    private String pos_address="24:4b:81:39:52:80";
-    private ArrayList<Integer> minorValues = new ArrayList<Integer>();
-    private HashMap<Integer, ArrayList<Double>> distances = new HashMap<Integer, ArrayList<Double>>();
+    //we set the address of Point of sales in the device name.
+    private String pos_address="BLE client";
+    public static final java.util.UUID SERVICE_UUID = java.util.UUID.fromString("00001111-0000-1000-8000-00805F9B34FB");
+    public static final java.util.UUID CHAR_UUID = java.util.UUID.fromString("00002222-0000-1000-8000-00805F9B34FB");
 
-    private BeaconManager beaconManager;
 
     private SharedPreferences preferences;
     private SharedPreferences.Editor editPref;
@@ -56,19 +60,31 @@ public class PaymentProcess extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter;
     private int REQUEST_ENABLE_BT = 1;
     private Handler mHandler;
-    private static final long SCAN_PERIOD = 10000;
+    private static final long SCAN_PERIOD = 30000;
     private BluetoothLeScanner mLEScanner;
     private ScanSettings settings;
     private List<ScanFilter> filters;
     private BluetoothGatt mGatt;
     private ScanCallback mScanCallback;
+    private ProgressDialog dialog;
+    private List<BluetoothGattService> services;
+    private BluetoothGattCharacteristic characteristicData;
+
     @Override
     protected void onCreate(Bundle savedInstanceState){
+
        super.onCreate(savedInstanceState);
+        //check ble activated or not
         SystemRequirementsChecker.checkWithDefaultDialogs(this);
+
         setContentView(R.layout.payment);
+        dialog = new ProgressDialog(this);
+        dialog.setCancelable(false);
+        dialog.setMessage("Loading");
+        dialog.show();
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
         editPref = preferences.edit();
+
         mHandler = new Handler();
         //scanning process and check whether enter payment area, if yes so we enable our payment button
         // and establishing ble connection to pos
@@ -81,8 +97,8 @@ public class PaymentProcess extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                Log.d("clicl","true");
-                scanLeDevice(true);
+                characteristicData.setValue("test".getBytes());
+                mGatt.writeCharacteristic(characteristicData);
             }
         });
     }
@@ -182,8 +198,14 @@ public class PaymentProcess extends AppCompatActivity {
                     public void onScanResult(int callbackType, ScanResult result) {
                         Log.i("callbackType", String.valueOf(callbackType));
                         Log.i("result", result.toString());
+                        Log.i("onLeScan", result.toString());
+
                         BluetoothDevice btDevice = result.getDevice();
+                        if(btDevice.getName()!=null){
+                            Log.i("btName", btDevice.getName());
+                        }
                         connectToDevice(btDevice);
+
                     }
 
                     @Override
@@ -213,11 +235,13 @@ public class PaymentProcess extends AppCompatActivity {
                             Log.i("onLeScan", device.toString());
                             if(device.getName()!=null){
                             Log.i("btName", device.getName());
+
+                                if(device.getName().equals(pos_address)){
+                                    Log.i("lescan detected",pos_address);
+                                    connectToDevice(device);
+                                }
                             }
-                            if(device.toString() == pos_address){
-                                Log.i("lescan detected",pos_address);
-                            }
-                            connectToDevice(device);
+
                         }
                     });
                 }
@@ -234,36 +258,79 @@ public class PaymentProcess extends AppCompatActivity {
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            Log.i("onConnectionStateChange", "Status: " + status);
-            switch (newState) {
-                case BluetoothProfile.STATE_CONNECTED:
-                    Log.i("gattCallback", "STATE_CONNECTED");
-                    gatt.discoverServices();
-                    break;
-                case BluetoothProfile.STATE_DISCONNECTED:
-                    Log.e("gattCallback", "STATE_DISCONNECTED");
-                    break;
-                default:
-                    Log.e("gattCallback", "STATE_OTHER");
+            super.onConnectionStateChange(gatt, status, newState);
+            if(newState == BluetoothProfile.STATE_CONNECTED) {
+                mGatt.discoverServices();
+            }else{
+                if(dialog.isShowing()){
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            dialog.hide();
+                        }
+                    });
+                }
             }
 
         }
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            List<BluetoothGattService> services = gatt.getServices();
-            Log.i("onServicesDiscovered", services.toString());
-            gatt.readCharacteristic(services.get(1).getCharacteristics().get
-                    (0));
+            super.onServicesDiscovered(gatt, status);
+            services = mGatt.getServices();
+
+            for(BluetoothGattService service : services){
+                if( service.getUuid().equals(SERVICE_UUID)) {
+                    Log.d("Andrey", "Uuid = " + service.getUuid().toString());
+
+                    characteristicData = service.getCharacteristic(CHAR_UUID);
+                    for (BluetoothGattDescriptor descriptor : characteristicData.getDescriptors()) {
+                        descriptor.setValue( BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+                        mGatt.writeDescriptor(descriptor);
+                    }
+                    gatt.setCharacteristicNotification(characteristicData, true);
+                }
+            }
+            if (dialog.isShowing()){
+                mHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        dialog.hide();
+                    }
+                });
+            }
+
+
+        }
+        @Override
+        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            Log.i("onCharacteristicRead", characteristic.toString());
+            byte[] value=characteristic.getValue();
+            String v = new String(value);
+            Log.i("onCharacteristicRead", "Value: " + v);
+        }
+
+
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+           // super.onCharacteristicWrite(gatt, characteristic, status);
+            Log.d("onCharacteristicWrite","before execute");
+            mGatt.executeReliableWrite();
+           /// gatt.setCharacteristicNotification(characteristic, true);
+            gatt.readCharacteristic(characteristic);
+
+            //setNotifySensor(mGatt);
+            Log.d("charnya",new String(characteristicData.getValue()));
+            Log.d("onCharacteristicRead","after execute");
+
+
         }
 
         @Override
-        public void onCharacteristicRead(BluetoothGatt gatt,
-                                         BluetoothGattCharacteristic
-                                                 characteristic, int status) {
-            Log.i("onCharacteristicRead", characteristic.toString());
-            gatt.disconnect();
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+
         }
     };
+
 
 }
