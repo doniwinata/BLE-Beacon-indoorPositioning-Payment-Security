@@ -106,10 +106,6 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent paymentIntent = new Intent(MainActivity.this, PaymentProcess.class);
 
-//                if(Build.VERSION.SDK_INT < 21){
-//                    paymentIntent = new Intent(MainActivity.this, PaymentProcessApi18.class);
-//
-//                }
                     try {
                     beaconManager.stopRanging(ALL_ESTIMOTE_BEACONS_REGION);
                 } catch (Exception e) {

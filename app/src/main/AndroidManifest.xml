@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.idsl.blepayment">
-
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
     <application
 
         android:allowBackup="true"
@@ -31,10 +33,6 @@
             android:screenOrientation="portrait"/>
         <activity
             android:name="com.example.idsl.blepayment.PaymentProcess"
-            android:label="Payment Process"
-            android:screenOrientation="portrait"/>
-        <activity
-            android:name="com.example.idsl.blepayment.PaymentProcessApi18"
             android:label="Payment Process"
             android:screenOrientation="portrait"/>
 

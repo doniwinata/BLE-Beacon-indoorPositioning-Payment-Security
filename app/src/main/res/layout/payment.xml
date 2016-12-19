@@ -14,4 +14,19 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/payment_button" />
+
+    <TextView
+        android:text="Connected POS:"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/tx_connected" />
+
+    <TextView
+        android:text="Logs:"
+        android:maxLines = "2000"
+        android:scrollbars = "vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/tx_logs" />
+
 </LinearLayout>
