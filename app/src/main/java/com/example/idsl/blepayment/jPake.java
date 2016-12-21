@@ -18,54 +18,35 @@ import java.util.concurrent.SynchronousQueue;
 
 import javax.crypto.SecretKey;
 
+import static com.example.idsl.blepayment.pProtocol.encrypt;
+import static com.example.idsl.blepayment.pProtocol.hmacSha1;
+import static com.example.idsl.blepayment.pProtocol.xor;
+
 /**
  * Created by Doni on 12/18/2016.
  */
 
 public class jPake {
-
-
-
-    /* J-PAKE can use pre-computed group parameters, same as DSA and Diffie-Hellman.
-	 * The parameters below are taken from Sun's JCE implementation of DSA, which
-	 * defines the modulus p up to 1024 bits (equivalent to 80-bit security.)
-	 * For longer lengths, you can use the group parameters published by NIST.
-	 * http://csrc.nist.gov/groups/ST/toolkit/documents/Examples/DSA2_All.pdf
-	 */
-
     BigInteger p = new BigInteger("fd7f53811d75122952df4a9c2eece4e7f611b7523cef4400c31e3f80b6512669455d402251fb593d8d58fabfc5f5ba30f6cb9b556cd7813b801d346ff26660b76b9950a5a49f9fe8047b1022c24fbba9d7feb7c61bf83b57e7c6a8a6150f04fb83f6d3c51ec3023554135a169132f675f3ae2b61d72aeff22203199dd14801c7", 16);
     BigInteger q = new BigInteger("9760508f15230bccb292b982a2eb840bf0581cf5", 16);
     BigInteger g = new BigInteger("f7e1a085d69b3ddecbbcab5c36b857b97994afbbfa3aea82f9574c0b3d0782675159578ebad4594fe67107108180b449167123e84c281613b7cf09328cc8a6e13c167a8b547c8d28e0a3ae1e2bb3a675916ea37f0bfa213562f1fb627a01243bcca4f1bea8519089a883dfe15ae59f06928b665e807b552564014c3bfecf492a", 16);
 
-    // From NIST,
-    // 2048-bit p, 224-bit q and 2048-bit g for 112-bit security, use
-	  /*
-	 * 3072-bit p, 256-bit q and 3072-bit g for 128-bit security, use
-	 */
-      /*
-     * For 192-bit and 256-bit security, you may want to implement J-PAKE using ECC, but
-     * that's beyond the scope of this prototype.
-     */
-
     /*
     Secret key of POS
      */
+    public byte[]  V1, r2_, r1, V2, xor12;
+    public String X, X_, Y, Y_;
+    public String T = "This is Token From Customer";
     public  String s2Str = "123456789101112";
-
     public final String salt = "SALT";
-    String logTimer ;
-    private static final String TAG = "Testing";
-    /* SignerIDs for Alice and Bob. Obviously, they must be different.
-     * In practical implementation, it is worth checking that explicitly.
-     */
-
-
     public  String IDCustomer= "ID_CUSTOMER";
     public  String  IDPOS= "NULL";
     public String finalSKey = "";
     public String finalNonce ="";
-    private long ProtocolTime= 0;
-
+    public boolean round1 = false;
+    public boolean round2 = false;
+    public boolean round3 = false;
+    public boolean round4 = false;
     //constructor
     public jPake(Integer type) {
         if(type.equals(1)){
@@ -88,8 +69,6 @@ public class jPake {
     }
 
 
-
-
     public void setPassword(String password){
         this.s2Str = password;
     }
@@ -99,14 +78,23 @@ public class jPake {
     public String getFinalNonce(){
         return this.finalNonce;
     }
-    public BigInteger x1,x2,s1,gx1,gx2,sigX1_1,sigX1_2,sigX2_1,sigX2_2;
-    public byte[] jpakeRound1() throws IOException {
+    public BigInteger x1,x2,s1,gx3,gx4;
+    public BigInteger gx1, gx2, sigX1_1, sigX1_2, sigX2_1, sigX2_2;
+    public BigInteger [] sigX3 = new BigInteger[2];
+    public BigInteger [] sigX4 = new BigInteger[2];
+    public BigInteger [] sigX4s = new BigInteger[2];
+    public BigInteger [] sigX1,sigX2,sigX2s;
+    public BigInteger Ka;
 
+    public BigInteger gB,B,gA,A;
+    public byte[] jpakeRound1() throws IOException {
+        s1 = new BigInteger(s2Str.getBytes());
         /**********************
             generate x1 and x1
         **********************/
 
          x1 = new BigInteger (160, new SecureRandom());
+        //new BigInteger()
          x2 = new BigInteger (160, new SecureRandom());
         /**********************
          generate gX3 and gX4
@@ -117,8 +105,8 @@ public class jPake {
         /**********************
          generate ZKP
          **********************/
-        BigInteger[] sigX1 = generateZKP(p,q,g,gx1,x1,IDCustomer);
-        BigInteger[] sigX2 = generateZKP(p,q,g,gx2,x2,IDCustomer);
+         sigX1 = generateZKP(p,q,g,gx1,x1,IDCustomer);
+         sigX2 = generateZKP(p,q,g,gx2,x2,IDCustomer);
         sigX1_1 = sigX1[0];
         sigX1_2 = sigX1[1];
         sigX2_1 = sigX2[0];
@@ -126,54 +114,154 @@ public class jPake {
         List<String> result = new ArrayList<String>();
             result.add("1");
             result.add(IDCustomer);
-            result.add(x1.toString());
-            result.add(x2.toString());
-            result.add(sigX1_1.toString());
-            result.add(sigX1_2.toString());
-            result.add(sigX2_1.toString());
-            result.add(sigX2_2.toString());
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DataOutputStream out = new DataOutputStream(baos);
-        for (String element : result) {
-            out.writeUTF(element);
-        }
-        byte[] bytes = baos.toByteArray();
-        System.out.println(bytes.length);
-        return compress.compress(bytes);
+            result.add("gx1");
+            result.add(gx1.toString());
+            result.add("gx2");
+            result.add(gx2.toString());
+            result.add("sigX1_1");
+            result.add(sigX1[0].toString());
+            result.add("sigX1_2");
+            result.add(sigX1[1].toString());
+            result.add("sigX2_1");
+            result.add(sigX2[0].toString());
+            result.add("sigX2_2");
+            result.add(sigX2[1].toString());
+        return outputStreamFunc(result);
     }
+
     public byte[] jpakeRound2() throws IOException {
-        BigInteger s1 = new BigInteger(s2Str.getBytes());
-        /* Step 1: Client sends */
-        /**********************
-         generate x1 and x1
-         **********************/
+        if (gx4.equals(BigInteger.ONE) || !verifyZKP(p,q,g,gx3,sigX3,IDPOS) ||
+                !verifyZKP(p,q,g,gx4,sigX4,IDPOS)) {
 
-        x1 = new BigInteger (160, new SecureRandom());
-        x2 = new BigInteger (160, new SecureRandom());
-        /**********************
-         generate gX3 and gX4
-         **********************/
-        gx1 = g.modPow(x1,p);
-        gx2 = g.modPow(x2,p);
+            System.out.println("g^{x4} shouldn't be 1 or invalid KP{x3,x4}");
+            //System.exit(0);
+        }else {
+            System.out.println("Bob checks g^{x2}!=1: OK");
+            System.out.println("Bob checks KP{x1},: OK");
+            System.out.println("Bob checks KP{x2},: OK");
+            System.out.println("");
 
-        /**********************
-         generate ZKP
-         **********************/
-        BigInteger[] sigX1 = generateZKP(p,q,g,gx1,x1,IDCustomer);
-        BigInteger[] sigX2 = generateZKP(p,q,g,gx2,x2,IDCustomer);
-        sigX1_1 = sigX1[0];
-        sigX1_2 = sigX1[1];
-        sigX2_1 = sigX2[0];
-        sigX2_2 = sigX2[1];
+            //generate beta and alpha
+             gA = gx1.multiply(gx3).multiply(gx4).mod(p);
+             A = gA.modPow(x2.multiply(s1).mod(q),p);
+             sigX2s = generateZKP(p,q,gA,A,x2.multiply(s1).mod(q),IDCustomer);
+        }
+
         List<String> result = new ArrayList<String>();
-        result.add("1");
-        result.add(IDCustomer);
-        result.add(x1.toString());
-        result.add(x2.toString());
-        result.add(sigX1_1.toString());
-        result.add(sigX1_2.toString());
-        result.add(sigX2_1.toString());
-        result.add(sigX2_2.toString());
+        result.add("3");
+        result.add(A.toString());
+        result.add("sigX2s_1");
+        result.add(sigX2s[0].toString());
+        result.add("sigX2s_2");
+        result.add(sigX2s[1].toString());
+        return outputStreamFunc(result);
+    }
+    public void updateValue(List<String> received){
+        Log.d("receivedSize",String.valueOf(received.size()));
+        //check whether it is round 1 from pos
+        if(received.get(0).equals("2")){
+            IDPOS = received.get(1); ///get POS ID
+            gx3 = new BigInteger(received.get(3));
+            gx4 = new BigInteger(received.get(5));
+            sigX3[0] =  new BigInteger(received.get(7));
+            sigX3[1] =  new BigInteger(received.get(9));
+            sigX4[0] =  new BigInteger(received.get(11));
+            sigX4[1] =  new BigInteger(received.get(13));
+        }else if(received.get(0).equals("4")){
+            gB = gx3.multiply(gx1).multiply(gx2).mod(p);
+            B = new BigInteger(received.get(1));
+            sigX4s[0] =  new BigInteger(received.get(3));
+            sigX4s[1] =  new BigInteger(received.get(5));
+            //calculate secret key and nonce
+
+            //calculate secret key and nonce
+            if (!verifyZKP(p,q,gB,B,sigX4s,IDPOS)){
+                System.out.println("ZKP not verified");
+
+            } else {
+
+                System.out.println("Verification ok !");
+            }
+
+
+            Ka = getSHA1(gx4.modPow(x2.multiply(s1).negate().mod(q),p).multiply(B).modPow(x2,p));
+            //random extention
+            String keyCalculation = Ka.toString();
+            char[] charArray = keyCalculation.toCharArray();
+            byte[] bytes = salt.getBytes();
+            final rExt rand = new rExt();
+            try {
+                SecretKey secretKey = rand.generateKey(charArray,bytes);
+                if (secretKey != null) {finalSKey = Base64.encodeToString(secretKey.getEncoded(), Base64.DEFAULT);}
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            } catch (InvalidKeySpecException e) {
+                e.printStackTrace();
+            }
+            Log.d("Final Key",finalSKey);
+            bytes = (IDCustomer+IDPOS).getBytes();
+            try {
+                SecretKey secretKey = rand.generateKey(charArray,bytes);
+                if (secretKey != null) {finalNonce = Base64.encodeToString(secretKey.getEncoded(), Base64.DEFAULT);}
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            } catch (InvalidKeySpecException e) {
+                e.printStackTrace();
+            }
+            Log.d("Final Nonce ",finalNonce);
+
+        }else if(received.get(0).equals("6")){
+            Y = received.get(2);
+            V2 = Base64.decode(received.get(4),Base64.DEFAULT);
+        }
+    }
+
+
+    public byte[] pprotocolRound1() throws IOException {
+        //step 1
+        r1 = new byte[33]; //Means 90 x 8 bit
+        Random rn = new Random();
+        rn.nextBytes(r1);
+        V1 = xor(r1,(finalSKey+finalNonce).getBytes());
+        X = hmacSha1(finalSKey+new String(r1),new String(V1)+IDCustomer);
+
+        List<String> result = new ArrayList<String>();
+        result.add("5");
+        result.add("x");
+        result.add(X);
+        result.add("V1");
+        result.add(Base64.encodeToString(V1,Base64.DEFAULT));
+        return outputStreamFunc(result);
+    }
+    public byte[] pprotocolRound2() throws IOException {
+        r2_ = xor(xor(V2,(finalSKey+finalNonce).getBytes()),r1);
+        Y_ = hmacSha1(finalSKey+new String(r2_),new String(r1)+new String(r2_)+new String(V2)+IDPOS);
+        if(Y_.equals(Y)){
+            Log.d("pprotocol 1 sucess",X);
+        }else {Log.d("Authentication Failed","X not equal");}
+        xor12 = xor(r1,r2_);
+        byte[] keyEnc = new byte[32];
+        // System.arraycopy(this.Sk.getBytes(), 0, keyEnc, 0, this.Sk.getBytes().length);
+        System.arraycopy(xor12, 0, keyEnc, 0, xor12.length-1);
+        Integer length = keyEnc.length;
+        Log.d("Length",length.toString());
+        // byte[] rx = new byte[32];
+        Long TS = System.currentTimeMillis();
+        String Data = T+","+ TS.toString();
+        byte[] encryptedData = encrypt(keyEnc,Data.getBytes());
+        String Z = hmacSha1(finalSKey+new String(xor12),this.T+new String(r1)+new String(r2_)+finalNonce+TS);
+
+        List<String> result = new ArrayList<String>();
+        result.add("7");
+        result.add("M");
+        result.add(Base64.encodeToString(encryptedData,Base64.DEFAULT));
+        result.add("Z");
+        result.add(Z);
+        return outputStreamFunc(result);
+    }
+
+
+    public byte[] outputStreamFunc(List<String> result) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(baos);
         for (String element : result) {
@@ -183,112 +271,6 @@ public class jPake {
         System.out.println(bytes.length);
         return compress.compress(bytes);
     }
-
-//    public String run(Integer type){
-//        /* Alice verifies Bob's ZKPs and also check g^{x4} != 1*/
-//        if (gx4.equals(BigInteger.ONE) || !verifyZKP(p,q,g,gx3,sigX3,IDPOS) ||
-//                !verifyZKP(p,q,g,gx4,sigX4,IDPOS)) {
-//
-//            //System.out.println("g^{x4} shouldn't be 1 or invalid KP{x3,x4}");
-//            //System.exit(0);
-//        }else {
-//            elapsedTime("Verification Alice");
-////            System.out.println("Alice checks g^{x4}!=1: OK");
-////            System.out.println("Alice checks KP{x3}: OK");
-////            System.out.println("Alice checks KP{x4}: OK");
-////            System.out.println("");
-//        }
-//
-//        /* Bob verifies Alice's ZKPs */
-//        if (gx2.equals(BigInteger.ONE) || !verifyZKP(p,q,g,gx1,sigX1,IDCustomer) ||
-//                !verifyZKP(p,q,g,gx2,sigX2,IDCustomer)) {
-//
-////            System.out.println("g^{x2} shoudn't be 1 or invalid KP{x1,x2}");
-////            System.exit(0);
-//        }else{
-//
-////            System.out.println("Bob checks g^{x2}!=1: OK");
-////            System.out.println("Bob checks KP{x1},: OK");
-////            System.out.println("Bob checks KP{x2},: OK");
-////            System.out.println("");
-//        }
-//
-//        //step 2
-//
-//        BigInteger gA = gx1.multiply(gx3).multiply(gx4).mod(p);
-//        BigInteger A = gA.modPow(x2.multiply(s1).mod(q),p);
-//        BigInteger[] sigX2s = generateZKP(p,q,gA,A,x2.multiply(s1).mod(q),IDCustomer);
-//        elapsedTime("Elapsed Time Step 2");
-//        BigInteger gB = gx3.multiply(gx1).multiply(gx2).mod(p);
-//        BigInteger B = gB.modPow(x4.multiply(s2).mod(q),p);
-//        BigInteger[] sigX4s = generateZKP(p,q,gB,B,x4.multiply(s2).mod(q),IDPOS);
-//        startTimer();
-//        if (!verifyZKP(p,q,gB,B,sigX4s,IDPOS)){
-//
-//        } else {
-//
-//        }
-//
-//    	/* Bob verifies Alice's ZKP */
-//        if (!verifyZKP(p,q,gA,A,sigX2s,IDCustomer)){
-//
-//        } else {
-//
-//        }
-//
-//        BigInteger Ka = getSHA1(gx4.modPow(x2.multiply(s1).negate().mod(q),p).multiply(B).modPow(x2,p));
-//        BigInteger Kb = getSHA1(gx2.modPow(x4.multiply(s2).negate().mod(q),p).multiply(A).modPow(x4,p));
-//        if(Ka.equals(Kb)) {
-//            logTimer += "\n Session Key: (" + Ka.bitLength() + ") Key: " + Ka.toString();
-//        }
-//        logTimer += "\n Session Key: (" + Ka.bitLength() + ") Key: " + Ka.toString();
-//        elapsedTime("Step 2 - Final Session Key Time");
-//        logTimer+="\n Total Protocol Time: "+Long.toString(ProtocolTime);
-//
-//        String keyCalculation = Ka.toString();
-//        char[] charArray = keyCalculation.toCharArray();
-//
-//        byte[] bytes = salt.getBytes();
-//
-//        final rExt rand = new rExt();
-//
-//
-//        try {
-//            SecretKey secretKey = rand.generateKey(charArray,bytes);
-//            if (secretKey != null) {finalSKey = Base64.encodeToString(secretKey.getEncoded(), Base64.DEFAULT);}
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        } catch (InvalidKeySpecException e) {
-//            e.printStackTrace();
-//        }
-//        Log.d("Final Key",finalSKey);
-//        logTimer+="\nFinal Key: "+finalSKey;
-//        elapsedTime("Elapsed Time round rExt ");
-//        keyCalculation = Kb.toString();
-//        charArray = keyCalculation.toCharArray();
-//        bytes = (IDCustomer+IDPOS).getBytes();
-//
-//
-//        try {
-//            SecretKey secretKey = rand.generateKey(charArray,bytes);
-//            if (secretKey != null) {finalNonce = Base64.encodeToString(secretKey.getEncoded(), Base64.DEFAULT);}
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        } catch (InvalidKeySpecException e) {
-//            e.printStackTrace();
-//        }
-//        Log.d("Final Nonce ",finalNonce);
-//        logTimer+="\nFinal Nonce : "+finalNonce;
-//
-//
-//        //secret sharing
-//
-//        //BigInteger shares = SecretSharing();
-//        return logTimer;
-//
-//
-//    }
-
     public BigInteger[] generateZKP (BigInteger p, BigInteger q, BigInteger g,
                                      BigInteger gx, BigInteger x, String signerID){
         BigInteger [] ZKP = new BigInteger [2];

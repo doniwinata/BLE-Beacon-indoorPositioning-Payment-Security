@@ -1,6 +1,8 @@
 package com.example.idsl.blepayment;
 
 import android.annotation.TargetApi;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -24,6 +26,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -40,6 +43,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.zip.DataFormatException;
@@ -55,6 +59,8 @@ public class PaymentProcess extends AppCompatActivity {
 
 
     private Button paymentButton;
+
+
     //we set the address of Point of sales in the device name.
     private String pos_address="BLE client";
     public static final java.util.UUID SERVICE_UUID = java.util.UUID.fromString("00001111-0000-1000-8000-00805F9B34FB");
@@ -67,7 +73,7 @@ public class PaymentProcess extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter;
     private int REQUEST_ENABLE_BT = 1;
     private Handler mHandler;
-    private static final long SCAN_PERIOD = 10000;
+    private static final long SCAN_PERIOD = 100000;
     private BluetoothLeScanner mLEScanner;
     private ScanSettings settings;
     private List<ScanFilter> filters;
@@ -76,11 +82,20 @@ public class PaymentProcess extends AppCompatActivity {
     private ProgressDialog dialog;
     private List<BluetoothGattService> services;
     private BluetoothGattCharacteristic characteristicData;
-    private final jPake jpake = new jPake(2);
+    private final jPake jpake = new jPake(1);
     public byte[] round1;
+    public byte[] round2;
+    public byte[] round3;
+    public byte[] round4;
     public Integer numPackets = 0;
     public byte[] packetData;
     public boolean packetFinish = false;
+    public Integer protoclCount = 0;
+    public Integer packetSize = 0;
+    public Integer packetInteration = 0;
+
+    private static int NOTIFICATION_ID = 0;
+    public byte[][] packets;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -111,10 +126,15 @@ public class PaymentProcess extends AppCompatActivity {
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             @Override
             public void onClick(View view) {
-
-                characteristicData.setValue("test".getBytes());
-
-                mGatt.writeCharacteristic(characteristicData);
+                //sendData(round1);
+                try {
+                    updateLogs(round3);
+                    sendData(round3);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (DataFormatException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
@@ -219,18 +239,22 @@ public class PaymentProcess extends AppCompatActivity {
                             Log.i("btName", btDevice.getName());
                             if(btDevice.getName().equals(pos_address)){
                                 connectToDevice(btDevice);
+                                if(!jpake.round1) {
+                                    try {
 
-                                try {
-                                    round1 = jpake.jpakeRound1();
+                                        round1 = jpake.jpakeRound1();
 
-                                    Log.d("round12",String.valueOf(round1.length));
-                                    updateLogs(round1);
-
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (DataFormatException e) {
-                                    e.printStackTrace();
+                                        Log.d("round1", String.valueOf(round1.length));
+                                        updateLogs(round1);
+                                        jpake.round1 = true;
+                                        sendData(round1);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    } catch (DataFormatException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
+
                             }
                         }
 
@@ -265,22 +289,24 @@ public class PaymentProcess extends AppCompatActivity {
                             if(device.getName()!=null){
                             Log.i("btName", device.getName());
 
-                                if(device.getName().equals(pos_address)){
-                                    Log.i("lescan detected",pos_address);
+                                if(device.getName().equals(pos_address)) {
+                                    Log.i("lescan detected", pos_address);
 
                                     connectToDevice(device);
+                                    if (!jpake.round1) {
+                                        try {
+                                            round1 = jpake.jpakeRound1();
+                                            Log.d("round1", String.valueOf(round1.length));
+                                            jpake.round1=true;
+                                            updateLogs(round1);
 
-                                    try {
-                                        round1 = jpake.jpakeRound1();
-                                        Log.d("round1",String.valueOf(round1.length));
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        } catch (DataFormatException e) {
+                                            e.printStackTrace();
+                                        }
 
-                                        updateLogs(round1);
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    } catch (DataFormatException e) {
-                                        e.printStackTrace();
                                     }
-
                                 }
                             }
 
@@ -304,14 +330,14 @@ public class PaymentProcess extends AppCompatActivity {
             if(newState == BluetoothProfile.STATE_CONNECTED) {
                 mGatt.discoverServices();
             }else{
-                if(dialog.isShowing()){
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            dialog.hide();
-                        }
-                    });
-                }
+//                if(dialog.isShowing()){
+//                    mHandler.post(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            dialog.hide();
+//                        }
+//                    });
+//                }
             }
 
         }
@@ -330,14 +356,15 @@ public class PaymentProcess extends AppCompatActivity {
                     gatt.setCharacteristicNotification(characteristicData, true);
                 }
             }
-            if (dialog.isShowing()){
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        dialog.hide();
-                    }
-                });
-            }
+            sendData(round1);
+//            if (dialog.isShowing()){
+//                mHandler.post(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        dialog.hide();
+//                    }
+//                });
+//            }
         }
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
@@ -347,8 +374,25 @@ public class PaymentProcess extends AppCompatActivity {
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            mGatt.executeReliableWrite();
-            gatt.readCharacteristic(characteristic);
+
+            if(packetInteration<packetSize){
+                Log.d("packetLength",String.valueOf(packets.length));
+                Log.d("interation",packetInteration.toString());
+                Log.d("packetSize", String.valueOf(packets[packetInteration].length));
+                Log.d("value", new String(packets[packetInteration]));
+            characteristicData.setValue(packets[packetInteration]);
+            mGatt.writeCharacteristic(characteristicData);
+                packetInteration++;
+            }else if(jpake.round2 && packetInteration == packetSize && protoclCount == 3){
+                    Log.d("packetLength",String.valueOf(packets.length));
+                    Log.d("interation",packetInteration.toString());
+                    Log.d("packetSize", String.valueOf(packets[packetInteration].length));
+                    Log.d("value", new String(packets[packetInteration]));
+                    characteristicData.setValue(packets[packetInteration]);
+                    mGatt.writeCharacteristic(characteristicData);
+                packetInteration++;
+            }
+
         }
 
         @Override
@@ -365,12 +409,14 @@ public class PaymentProcess extends AppCompatActivity {
                     numPackets--;
                     if(numPackets==0){
                         packetFinish=true;
+                       // packetData = null;
                     }
             }
             if(packetFinish){
                 System.out.println("PacketLength: "+packetData.length);
             try {
                 updateLogs(packetData);
+                packetData = null;
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (DataFormatException e) {
@@ -394,8 +440,10 @@ public class PaymentProcess extends AppCompatActivity {
         System.out.println(decomp.length);
         ByteArrayInputStream bais = new ByteArrayInputStream(decomp);
         DataInputStream in = new DataInputStream(bais);
+        List<String> result = new ArrayList<String>();
         while (in.available() > 0) {
             String element = in.readUTF();
+            result.add(element);
             Log.d("hasil",element);
             if(element.equals("1")){
                 tampLogs+="\nround 1(X1,X2,ZKP1,ZKP2)";
@@ -409,13 +457,112 @@ public class PaymentProcess extends AppCompatActivity {
             tampLogs+="\n"+element;
 
         }
+
+        jpake.updateValue(result);
+        protoclCount++;
+        if(protoclCount==2 && jpake.round2 == false){
+            //means ready for round 2
+            round2 = jpake.jpakeRound2();
+            Log.d("protocol", "round 2 running");
+            updateLogs(round2);
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            jpake.round2=true;
+            sendData(round2);
+        }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                if(jpake.finalSKey!="" &&protoclCount == 4 && !jpake.round3 ){
+                    tampLogs+="\n------------------- \nFinal Key: "+jpake.getfinalSKey()+"\n Final Nonce: "+jpake.getFinalNonce();
+                    try {
+                        round3 = jpake.pprotocolRound1();
+                        jpake.round3 =true;
+                        if(dialog.isShowing()){
+                            mHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    dialog.hide();
+                                }
+                            });
+                        }
+//                        updateLogs(round3);
+//                        sendData(round3);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }else if (protoclCount == 6 && !jpake.round4){
+                    try {
+                        round4 = jpake.pprotocolRound2();
+                        jpake.round4 =true;
+                        updateLogs(round4);
+                        sendData(round4);
+                        sendNotification("Payment Complete !");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (DataFormatException e) {
+                        e.printStackTrace();
+                    }
+                }
                 log_view.setText(tampLogs);
+
             }
         });
 
+    }
+
+
+    public void sendData(byte [] data){
+        packetInteration =0;
+        int chunksize = 20;
+        Log.d("dataLength",String.valueOf(data.length));
+        packetSize = (int) Math.ceil( data.length / (double)chunksize);
+        Log.d("packetSize",packetSize.toString());
+        packets = new byte[packetSize][chunksize];
+        Integer start = 0;
+        int x =0;
+        if(jpake.round2 && protoclCount == 3){
+            //bugs on second protocol, first byte not send, sowe made dummy bytes
+            //packetSize;
+            x=1;
+            packets = new byte[packetSize+1][chunksize];
+            packets[0] = new byte[5];
+        }
+        for(int i = x; i < packets.length; i++) {
+            int end = start+chunksize;
+            if(end>data.length){end = data.length;}
+            packets[i] = Arrays.copyOfRange(data,start, end);
+            start += chunksize;
+        }
+        characteristicData.setValue(packetSize.toString().getBytes());
+        mGatt.writeCharacteristic(characteristicData);
+        mGatt.executeReliableWrite();
+
+        //packets will be send in onCharacteristicRead.
+    }
+
+    private void sendNotification(String message){
+        NotificationManager mNotificationManager = (NotificationManager)
+                this.getSystemService(Context.NOTIFICATION_SERVICE);
+
+
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(this)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle(getString(R.string.app_name))
+                        .setStyle(new NotificationCompat.BigTextStyle()
+                                .bigText(message))
+                        .setAutoCancel(true)
+                        .setContentText(message);
+        Notification note = mBuilder.build();
+        note.defaults |= Notification.DEFAULT_VIBRATE;
+        note.defaults |= Notification.DEFAULT_SOUND;
+        mNotificationManager.notify(NOTIFICATION_ID++, note);
     }
 
 }

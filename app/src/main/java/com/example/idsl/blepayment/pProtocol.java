@@ -93,7 +93,7 @@ public class pProtocol {
     }
 
 
-    private static byte[] xor(final byte[] input, final byte[] secret) {
+    public static byte[] xor(final byte[] input, final byte[] secret) {
         final byte[] output = new byte[input.length];
         if (secret.length == 0) {
             throw new IllegalArgumentException("empty security key");
@@ -131,7 +131,7 @@ public class pProtocol {
         }
     }
 
-    private static byte[] encrypt(byte[] raw, byte[] clear) {
+    public static byte[] encrypt(byte[] raw, byte[] clear) {
         try {
             SecretKeySpec skeySpec = new SecretKeySpec(raw, "AES");
             Cipher cipher = Cipher.getInstance("AES");
@@ -144,7 +144,7 @@ public class pProtocol {
 
     }
 
-    private static byte[] decrypt(byte[] raw, byte[] encrypted) {
+    public static byte[] decrypt(byte[] raw, byte[] encrypted) {
         try {
             SecretKeySpec skeySpec = new SecretKeySpec(raw, "AES");
             Cipher cipher = Cipher.getInstance("AES");
