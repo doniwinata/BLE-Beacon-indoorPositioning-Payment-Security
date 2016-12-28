@@ -9,7 +9,7 @@
     <string name="y_value">Enter the y value: </string>
     <string name="z_value">Enter the z value: </string>
     <string name="map_settings">Change the dimensions of the map</string>
-    <string name="reset_pos">Reset</string>
+    <string name="reset_pos">Rst</string>
     <string name="info">Info</string>
     <string name="minor">The minor: </string>
     <string name="power">The current power: </string>

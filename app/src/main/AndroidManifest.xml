@@ -36,6 +36,7 @@
             android:label="Payment Process"
             android:screenOrientation="portrait"/>
 
+
     </application>
 
 </manifest>

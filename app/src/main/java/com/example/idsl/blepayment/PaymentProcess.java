@@ -42,6 +42,7 @@ import com.estimote.sdk.SystemRequirementsChecker;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -104,6 +105,11 @@ public class PaymentProcess extends AppCompatActivity {
         //check ble activated or not
         SystemRequirementsChecker.checkWithDefaultDialogs(this);
         setContentView(R.layout.payment);
+
+        //set secret sharing
+
+
+
         connected_device = (TextView) findViewById(R.id.tx_connected);
         log_view = (TextView) findViewById(R.id.tx_logs);
         log_view.setMovementMethod(new ScrollingMovementMethod());
@@ -113,6 +119,25 @@ public class PaymentProcess extends AppCompatActivity {
         dialog.show();
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
         editPref = preferences.edit();
+
+        final Sss secretSharing = new Sss(3,4);
+        BigInteger PrimeShammir = new BigInteger("268222406735819");
+        Sss.SecretShare [] BeaconId = new Sss.SecretShare[4];
+
+        String minor1 = preferences.getString("secretBeacon"+String.valueOf(1),"76067123809422");
+        String minor2 = preferences.getString("secretBeacon"+String.valueOf(2),"181564352822156");
+        String minor3 = preferences.getString("secretBeacon"+String.valueOf(3),"171726069403495");
+        String minor4 = preferences.getString("secretBeacon"+String.valueOf(4),"46552273553439");
+
+        BeaconId[0] = new Sss.SecretShare(0,new BigInteger(minor1));
+        BeaconId[1] = new Sss.SecretShare(1,new BigInteger(minor2));
+        BeaconId[2] = new Sss.SecretShare(2,new BigInteger(minor3));
+        BeaconId[3] = new Sss.SecretShare(3,new BigInteger(minor4));
+
+        final BigInteger result = secretSharing.combine(BeaconId, PrimeShammir);
+
+        jpake.setPassword(result.toString());
+        Log.d("password" ,jpake.s2Str);
 
         mHandler = new Handler();
         //scanning process and check whether enter payment area, if yes so we enable our payment button

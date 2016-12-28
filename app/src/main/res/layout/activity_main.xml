@@ -24,39 +24,10 @@
         android:id="@+id/map_position" />
 
     <Button
-        android:text="@string/info"
+        android:text="Payment Demo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/payment_activity" />
-
-    <Button
-        android:text="@string/measure_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/single_measure" />
-
-    <TableLayout
-        android:layout_width="match_parent"
-        android:id="@+id/table_distance"
-        android:layout_height="246dp">
-
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" >
-
-            <TextView
-                android:text="TextView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:id="@+id/show_result2" />
-        </TableRow>
-
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-
-    </TableLayout>
 
     <TextView android:id="@+id/show_result"
         android:layout_width="match_parent"

@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        final TableLayout distanceTable = (TableLayout) findViewById(R.id.table_distance);
+
         final TableLayout.LayoutParams paramTableRow = new TableLayout.LayoutParams(TableRow.LayoutParams.MATCH_PARENT,
                 TableRow.LayoutParams.WRAP_CONTENT);
         paramTableRow.setMargins(50, 0, 0, 0);
@@ -118,64 +118,64 @@ public class MainActivity extends AppCompatActivity {
 
         //Decimal format to show the distance with only 4 decimals.
         final DecimalFormat df = new DecimalFormat("#0.####");
-        final Button measureButton = (Button) findViewById(R.id.single_measure);
-
-        //The Button will calculate the distance on each beacon and show this in a TextView.
-
-        measureButton.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v){
-                distanceTable.removeAllViews();
-
-                TableRow textRow = new TableRow(MainActivity.this);
-                textRow.setLayoutParams(paramTableRow);
-
-                TextView minorStringText = new TextView(MainActivity.this);
-                minorStringText.setText("Minor");
-                minorStringText.setLayoutParams(paramTextView);
-
-                TextView avgStringText = new TextView(MainActivity.this);
-                avgStringText.setText("Average");
-                avgStringText.setLayoutParams(paramTextView);
-
-                TextView medStringText = new TextView(MainActivity.this);
-                medStringText.setText("Median");
-                medStringText.setLayoutParams(paramTextView);
-
-                textRow.addView(minorStringText);
-                textRow.addView(avgStringText);
-                textRow.addView(medStringText);
-                distanceTable.addView(textRow);
-
-                // Calculate the distance for each beacon and add this to the TextView.
-                for (int i = 0; i < minorValues.size(); i ++) {
-                    int minorVal = minorValues.get(i);
-                    ArrayList<Double> dist = distances.get(minorVal);
-                    double avg = average(dist);
-                    double med = median(dist);
-
-                    TableRow newRow = new TableRow(MainActivity.this);
-                    newRow.setLayoutParams(paramTableRow);
-
-                    TextView minorText = new TextView(MainActivity.this);
-                    minorText.setText(String.valueOf(minorVal));
-                    minorText.setLayoutParams(paramTextView);
-
-                    TextView avgText = new TextView(MainActivity.this);
-                    avgText.setText(String.valueOf(df.format(avg)));
-                    avgText.setLayoutParams(paramTextView);
-
-                    TextView medText = new TextView(MainActivity.this);
-                    medText.setText(String.valueOf(df.format(med)));
-                    medText.setLayoutParams(paramTextView);
-
-                    newRow.addView(minorText);
-                    newRow.addView(avgText);
-                    newRow.addView(medText);
-                    distanceTable.addView(newRow);
-                };
-            }
-        });
+//        final Button measureButton = (Button) findViewById(R.id.single_measure);
+//
+//        //The Button will calculate the distance on each beacon and show this in a TextView.
+//
+//        measureButton.setOnClickListener(new View.OnClickListener(){
+//            @Override
+//            public void onClick(View v){
+//                distanceTable.removeAllViews();
+//
+//                TableRow textRow = new TableRow(MainActivity.this);
+//                textRow.setLayoutParams(paramTableRow);
+//
+//                TextView minorStringText = new TextView(MainActivity.this);
+//                minorStringText.setText("Minor");
+//                minorStringText.setLayoutParams(paramTextView);
+//
+//                TextView avgStringText = new TextView(MainActivity.this);
+//                avgStringText.setText("Average");
+//                avgStringText.setLayoutParams(paramTextView);
+//
+//                TextView medStringText = new TextView(MainActivity.this);
+//                medStringText.setText("Median");
+//                medStringText.setLayoutParams(paramTextView);
+//
+//                textRow.addView(minorStringText);
+//                textRow.addView(avgStringText);
+//                textRow.addView(medStringText);
+//                distanceTable.addView(textRow);
+//
+//                // Calculate the distance for each beacon and add this to the TextView.
+//                for (int i = 0; i < minorValues.size(); i ++) {
+//                    int minorVal = minorValues.get(i);
+//                    ArrayList<Double> dist = distances.get(minorVal);
+//                    double avg = average(dist);
+//                    double med = median(dist);
+//
+//                    TableRow newRow = new TableRow(MainActivity.this);
+//                    newRow.setLayoutParams(paramTableRow);
+//
+//                    TextView minorText = new TextView(MainActivity.this);
+//                    minorText.setText(String.valueOf(minorVal));
+//                    minorText.setLayoutParams(paramTextView);
+//
+//                    TextView avgText = new TextView(MainActivity.this);
+//                    avgText.setText(String.valueOf(df.format(avg)));
+//                    avgText.setLayoutParams(paramTextView);
+//
+//                    TextView medText = new TextView(MainActivity.this);
+//                    medText.setText(String.valueOf(df.format(med)));
+//                    medText.setLayoutParams(paramTextView);
+//
+//                    newRow.addView(minorText);
+//                    newRow.addView(avgText);
+//                    newRow.addView(medText);
+//                    distanceTable.addView(newRow);
+//                };
+//            }
+//        });
 
 
 

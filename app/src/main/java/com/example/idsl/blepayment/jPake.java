@@ -37,7 +37,7 @@ public class jPake {
     public byte[]  V1, r2_, r1, V2, xor12;
     public String X, X_, Y, Y_;
     public String T = "This is Token From Customer";
-    public  String s2Str = "123456789101112";
+    public  String s2Str = "NULL";
     public final String salt = "SALT";
     public  String IDCustomer= "ID_CUSTOMER";
     public  String  IDPOS= "NULL";
