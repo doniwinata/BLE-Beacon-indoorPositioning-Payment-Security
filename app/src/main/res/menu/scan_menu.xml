@@ -2,8 +2,18 @@
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:id="@+id/refresh"
-        android:title="Something"
+    <item android:id="@+id/btn_average"
+        android:title="Average"
         android:showAsAction="always"/>
+    <item android:title="Triangle"
+        android:id="@+id/btn_triangle" />
+    <group >
+        <item android:title="Distance Average"
+            android:id="@+id/btn_distance_average" />
+        <item android:title="Distance Median"
+            android:id="@+id/btn_distance_median" />
+        <item android:title="Real Distance"
+            android:id="@+id/btn_distance_real" />
+    </group>
 
 </menu>

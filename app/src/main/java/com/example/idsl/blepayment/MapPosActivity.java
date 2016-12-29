@@ -31,6 +31,7 @@ import com.estimote.sdk.BeaconManager;
 import com.estimote.sdk.Region;
 import com.estimote.sdk.SystemRequirementsChecker;
 import com.estimote.sdk.Utils;
+import com.estimote.sdk.cloud.model.Device;
 import com.estimote.sdk.internal.Flags;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -66,7 +67,11 @@ public class MapPosActivity extends AppCompatActivity {
 
     private float mapXSize;
     private float mapYSize;
-
+    //mode for calculation of observed distance
+    //0: real distance, 1: Average, 2: Median
+    public int Mode = 0;
+    public int ModeIndoorAlgorithm = 0;
+    public String detect = "outside";
     //size of the map/picture in pixels
 
     private int widthPixels;
@@ -81,9 +86,11 @@ public class MapPosActivity extends AppCompatActivity {
     private HashMap<Integer, ArrayList<Double>> distances = new HashMap<Integer, ArrayList<Double>>();
     private HashMap<Integer, Double> distanceAvg = new HashMap<Integer, Double>();
     private HashMap<Integer, float[]> beaconDist = new HashMap<Integer, float[]>();
+    public  Button paymentButton;
     @Override
     protected  void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.map_position);
         assert getSupportActionBar() != null;
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -115,7 +122,7 @@ public class MapPosActivity extends AppCompatActivity {
 
         //Reset the distances and measurements counter to default within the scanning method.
         final Button resetButton = (Button) findViewById(R.id.reset_pos);
-        final Button paymentButton = (Button) findViewById(R.id.btn_payment);
+        paymentButton = (Button) findViewById(R.id.btn_payment);
         paymentButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -212,10 +219,7 @@ public class MapPosActivity extends AppCompatActivity {
 
                         //Reset everything to default values when the button is pressed
                         if(reset){
-                            measurements = 0;
-                            distances = new HashMap<Integer, ArrayList<Double>>();
-                            distanceAvg = new HashMap<Integer, Double>();
-                            reset = false;
+                           resetDistance();
                         }
 
 
@@ -232,7 +236,7 @@ public class MapPosActivity extends AppCompatActivity {
                             if(preferences.getString("secretBeacon"+String.valueOf(minorVal),"")==""){
                                 Log.d("masukGetSecretBeacon",String.valueOf(minorVal));
                                 getSecretBeacon(String.valueOf(minorVal));
-                                Log.d("VALUE PREFERENCES",preferences.getString("secretBeacon"+String.valueOf(minorVal),null));
+                               // Log.d("VALUE PREFERENCES",preferences.getString("secretBeacon"+String.valueOf(minorVal),null));
                             }
 
                             //to prevent new beacons from showing up or invalid beacons from showing.
@@ -256,11 +260,15 @@ public class MapPosActivity extends AppCompatActivity {
                             mapInfo.append("Beacon "+String.valueOf(minorVal)+" : distance: " + String.valueOf(distanceAvg.get(minorVal).floatValue())+"\n");
                         }
                         if(beaconList.size()>=2){
-                            System.out.println(beaconList.size());
+                            //System.out.println(beaconList.size());
+                            if(ModeIndoorAlgorithm == 0){
                         userPos = userLocation(beaconList);
+                            }else{
+                                userPos = userLocationNew(beaconList);
 
-                        mapInfo.append("User Position (x, y) " + userPos[0] + ", " + userPos[1] + "\n" + "Maximum error: " +
-                                userPos[2] +"\n");
+                            }
+                        mapInfo.append("User Position (x, y) " + userPos[0] + ", " + userPos[1] + "\n" + "Detection: " +
+                                detect +"\n");
                         Log.d("paint","true");
                         canvas.drawCircle(widthPixels *(userPos[0]/mapXSize), heightPixels * (userPos[1]/mapYSize),
                                 (float) 0.02 * widthPixels, paintRed);
@@ -335,23 +343,55 @@ public class MapPosActivity extends AppCompatActivity {
         System.out.println(beaconDist.size());
         int minor_beacon_1 = 1;
         int minor_beacon_2 = 2;
+        int minor_beacon_3 = 3;
 
 
         //triangle
         float dist_b1_b2 = (float)eucludianDistance(beaconDist.get(minor_beacon_1)[0],beaconDist.get(minor_beacon_2)[0],beaconDist.get(minor_beacon_1)[1],beaconDist.get(minor_beacon_2)[1]);
         float dist_b1_dev = beaconDist.get(minor_beacon_1)[2];
         float dist_b2_dev = beaconDist.get(minor_beacon_2)[2];
+        float dist_b3_dev = beaconDist.get(minor_beacon_3)[2];
+        //demo
+        // dist_b1_b2 = 5;
+        //dist_b1_dev = 3;
+        //dist_b2_dev  =4;
+        //dist_b3_dev = 3;
 
-
-        double d_x = (Math.abs(Math.pow(dist_b1_dev,2)-Math.pow(dist_b2_dev,2)))-Math.pow(dist_b1_b2,2) / (-2*dist_b1_b2);
+        double d_x = ((Math.abs(Math.pow(dist_b1_dev,2)-Math.pow(dist_b2_dev,2)))-Math.pow(dist_b1_b2,2)) / (-2*dist_b1_b2);
 
         double d_y = Math.sqrt(Math.abs((Math.pow(dist_b1_dev,2)-Math.pow(d_x,2))));
+        //c_x =(abs(d1^2-d2^2)-dist_b1_b2^2) / (-2 * dist_b1_b2)
+        //c_y = sqrt(d1^2-c_x^2)
         //detect wether inside payment area, we assume that payment area is a square by using 3 beacons
         //b1************
         //*            *
         //*            *
         //*            *
         //b2**********b3
+
+        d_x+=beaconDist.get(minor_beacon_1)[0];
+        d_y+=beaconDist.get(minor_beacon_1)[1];
+        Log.d("Coordinate: X: ", String.valueOf(d_x) +"|Y: "+String.valueOf(d_y));
+
+        double dist_b3_positive = eucludianDistance((float)d_x,(float)d_y,beaconDist.get(minor_beacon_3)[0],beaconDist.get(minor_beacon_3)[1]);
+        double dist_b3_negative = eucludianDistance((float)d_x,(float)d_y*-1+beaconDist.get(minor_beacon_1)[1],beaconDist.get(minor_beacon_3)[0],beaconDist.get(minor_beacon_3)[1]);
+        Log.d("Coordinate: Positive: ", String.valueOf(dist_b3_positive) +"|Negative: "+String.valueOf(dist_b3_negative));
+        if(d_x>=preferences.getFloat("x1",-1) && d_x <= preferences.getFloat("x2",-1) && d_y >=preferences.getFloat("y1",-1)&& d_y <=preferences.getFloat("y3",-1)){
+            if(dist_b3_negative<dist_b3_positive){
+                detect = "outside";
+                paymentButton.setEnabled(false);
+                d_y = d_y*-1+beaconDist.get(minor_beacon_1)[1];
+            }else {detect = "inside";
+                paymentButton.setEnabled(true);}
+        }else
+        {
+            detect = "outside";
+
+            paymentButton.setEnabled(false);
+        }
+
+
+        Log.d("Coordinate: Detect: ",detect);
         //check if result x, greater than b2x, less than b3x, and y, greater than b1y, and less than b2y
         //if(d_x >= beaconDist.get(minor_beacon_1)[0] && d_x <=  )
 
@@ -440,6 +480,14 @@ public class MapPosActivity extends AppCompatActivity {
                 }
             }
         }
+        if(x_user >= preferences.getFloat("x1", -1) && x_user <= preferences.getFloat("x2", -1) && y_user >= preferences.getFloat("y1", -1) && y_user <= preferences.getFloat("y3", -1)){
+            detect = "inside";
+            paymentButton.setEnabled(true);
+        }else{
+            detect = "outside";
+            paymentButton.setEnabled(false);
+        }
+
         return new float[]{x_user, y_user, r_user};
     }
 
@@ -450,18 +498,25 @@ public class MapPosActivity extends AppCompatActivity {
 
         // Add the distance to the ArrayList and maintain a certain size.
         double distance = Utils.computeAccuracy(beacon);
-       // distanceAvg.put(minorVal,distance);
-
+        if(Mode == 0){
+        distanceAvg.put(minorVal,distance);
+        }
+        else{
         ArrayList<Double> distanceToBeacon = distances.get(minorVal);
 //        if(distanceToBeacon.size()>50){
 //            distances.remove(minorVal);
 //        }
         distanceToBeacon.add(distance);
-        if (distanceToBeacon.size() > 20
+        if (distanceToBeacon.size() > 40
                 ) {
             distanceToBeacon.remove(0);
         }
+            if(Mode == 1){
         average(distanceToBeacon, minorVal);
+            }else{
+                median(distanceToBeacon, minorVal);
+            }
+        }
     }
 
     /*
@@ -499,27 +554,33 @@ public class MapPosActivity extends AppCompatActivity {
 
         float beaconY = preferences.getFloat("y" + minorVal, 0);
         //set for development only !!!
-        if(minorVal == 1){
-            editPref.putFloat("x1", 2);
-            editPref.putFloat("y1", 2);
-            editPref.putFloat("z1", 0);
-            beaconX = 2;
-            beaconY = 2;
-        }else if (minorVal ==2){
+        //if(beaconX)
+        if(beaconX == -1 || beaconY == -1) {
+            if (minorVal == 1) {
+                editPref.putFloat("x1", 2);
+                editPref.putFloat("y1", 2);
+                editPref.putFloat("z1", 0);
+                beaconX = 2;
+                beaconY = 2;
+            } else if (minorVal == 2) {
 
-            editPref.putFloat("x2", 4);
-            editPref.putFloat("y2", 2);
-            editPref.putFloat("z2", 0);
-            beaconX = 4;beaconY=2;
-        }else{
+                editPref.putFloat("x2", 4);
+                editPref.putFloat("y2", 2);
+                editPref.putFloat("z2", 0);
+                beaconX = 4;
+                beaconY = 2;
+            } else {
 
-            editPref.putFloat("x3", 4);
-            editPref.putFloat("y3", 4);
-            editPref.putFloat("z3", 0);
-            beaconX = 4;beaconY=4;
+                editPref.putFloat("x3", 2);
+                editPref.putFloat("y3", 4);
+                editPref.putFloat("z3", 0);
+                beaconX = 2;
+                beaconY = 4;
+            }
+            editPref.commit();
         }
 
-        editPref.commit();
+
         // Calculate the ratio of the beacon position with the map
         float ratioX = beaconX / mapXSize;
         float ratioY = beaconY / mapYSize;
@@ -576,28 +637,12 @@ public class MapPosActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.scan_menu, menu);
-        MenuItem refreshItem = menu.findItem(R.id.refresh);
-        refreshItem.setActionView(R.layout.actionbar_indeterminate_progress);
+       // MenuItem refreshItem = menu.findItem(R.id.refresh);
+        //refreshItem.setActionView(R.layout.actionbar_indeterminate_progress);
         return true;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == android.R.id.home) {
-            final Intent intent = new Intent(MapPosActivity.this, MainActivity.class);
 
-            try {
-                beaconManager.stopRanging(ALL_ESTIMOTE_BEACONS_REGION);
-            } catch (Exception e) {
-            }
-
-            editPref.putBoolean("intent_stop", false);
-            editPref.commit();
-            startActivity(intent);
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
 
     @Override
     protected void onDestroy() {
@@ -656,22 +701,65 @@ public class MapPosActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.btn_average:
+                ModeIndoorAlgorithm = 0;
+                resetDistance();
+                return true;
 
+            case R.id.btn_triangle:
+                ModeIndoorAlgorithm = 1;
+                resetDistance();
+                return true;
+            case R.id.btn_distance_average:
+                Mode = 3;
+                resetDistance();
+                return true;
+
+            case R.id.btn_distance_median:
+
+                Mode = 2;
+                resetDistance();
+                return true;
+            case R.id.btn_distance_real:
+                //mode is 0
+                Mode = 0;
+                resetDistance();
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+    public void resetDistance(){
+        measurements = 0;
+        distances = new HashMap<Integer, ArrayList<Double>>();
+        distanceAvg = new HashMap<Integer, Double>();
+        reset = false;
+    }
 
     public void getSecretBeacon(final String minorVal){
-        Log.d("masukFirebase","true");
+        Log.d("masukFirebase",minorVal);
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference myRef = database.getReference("secretBeacon");
         //get value from firebase
         final String[] result = {""};
-        myRef.addValueEventListener(new ValueEventListener() {
+        myRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 // This method is called once with the initial value and again
                 // whenever data at this location is updated.
-
+                Log.d("marissa",minorVal);
                 String value = dataSnapshot.child(minorVal).child("secret").getValue(String.class);
                 String POS = dataSnapshot.child(minorVal).child("POS_ADDRESS").getValue(String.class);
+                Log.d("marissa",value);
+                Log.d("marissa",POS);
+
                 editPref.putString("secretBeacon"+minorVal, value);
                 editPref.commit();
             }
