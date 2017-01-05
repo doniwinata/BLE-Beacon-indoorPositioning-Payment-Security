@@ -231,8 +231,9 @@ public class MapPosActivity extends AppCompatActivity {
                         for (int i = 0; i < beaconList.size();i++){
                             Beacon currentBeacon = beaconList.get(i);
                             int minorVal = currentBeacon.getMinor();
-
+                            if(minorVal <4){
                             //get secret and put to preferences
+
                             if(preferences.getString("secretBeacon"+String.valueOf(minorVal),"")==""){
                                 Log.d("masukGetSecretBeacon",String.valueOf(minorVal));
                                 getSecretBeacon(String.valueOf(minorVal));
@@ -258,7 +259,8 @@ public class MapPosActivity extends AppCompatActivity {
                             //Draw a circle at the beacon position.
                             canvas.drawCircle(locationBeacon[0], locationBeacon[1], (float) 0.02* widthPixels, paintBlue);
                             mapInfo.append("Beacon "+String.valueOf(minorVal)+" : distance: " + String.valueOf(distanceAvg.get(minorVal).floatValue())+"\n");
-                        }
+                            }
+                            }
                         if(beaconList.size()>=2){
                             //System.out.println(beaconList.size());
                             if(ModeIndoorAlgorithm == 0){
@@ -316,6 +318,7 @@ public class MapPosActivity extends AppCompatActivity {
         for(int i =0; i< beaconList.size();i++){
             System.out.println(beaconList.size());
             int minorVal = beaconList.get(i).getMinor();
+            if(minorVal <4){
             float r;
             try {
 
@@ -335,6 +338,7 @@ public class MapPosActivity extends AppCompatActivity {
                     beaconDist.put(minorVal, new float[]{x, y, r});
                 System.out.println(beaconDist.size());
                 //}
+            }
             }
 
         }
@@ -411,6 +415,7 @@ public class MapPosActivity extends AppCompatActivity {
         for (int i = 0; i < beaconsList.size(); i++) {
 
             int minorVal = beaconsList.get(i).getMinor();
+            if(minorVal <4){
             float r;
             try {
              //   Log.d("minorVal: "+ String.valueOf(minorVal),String.valueOf(distanceAvg.size()));
@@ -430,6 +435,7 @@ public class MapPosActivity extends AppCompatActivity {
                 circleArray.add(new float[]{x, y, r});
                 x_user += x;
                 y_user += y;
+            }
             }
         }
 

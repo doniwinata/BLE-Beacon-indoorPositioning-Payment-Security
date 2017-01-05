@@ -79,7 +79,7 @@ public class PaymentProcess extends AppCompatActivity {
     private ScanSettings settings;
     private List<ScanFilter> filters;
     private BluetoothGatt mGatt;
-    private ScanCallback mScanCallback;
+   // private ScanCallback mScanCallback;
     private ProgressDialog dialog;
     private List<BluetoothGattService> services;
     private BluetoothGattCharacteristic characteristicData;
@@ -94,7 +94,7 @@ public class PaymentProcess extends AppCompatActivity {
     public Integer protoclCount = 0;
     public Integer packetSize = 0;
     public Integer packetInteration = 0;
-
+    public boolean connectedPOS = false;
     private static int NOTIFICATION_ID = 0;
     public byte[][] packets;
 
@@ -216,7 +216,6 @@ public class PaymentProcess extends AppCompatActivity {
 
                         mBluetoothAdapter.stopLeScan(mLeScanCallback);
                     } else {
-                        mScanCallbackfunc();
                         Log.d("sdk","masuk");
                         mLEScanner.stopScan(mScanCallback);
 
@@ -228,7 +227,6 @@ public class PaymentProcess extends AppCompatActivity {
 
                 mBluetoothAdapter.startLeScan(mLeScanCallback);
             } else {
-                mScanCallbackfunc();
                 Log.d("sdk","masuk");
                 mLEScanner.startScan(filters, settings, mScanCallback);
             }
@@ -237,7 +235,7 @@ public class PaymentProcess extends AppCompatActivity {
 
                 mBluetoothAdapter.stopLeScan(mLeScanCallback);
             } else {
-                mScanCallbackfunc();
+
                 Log.d("sdk","masuk");
                 mLEScanner.stopScan(mScanCallback);
             }
@@ -249,57 +247,105 @@ public class PaymentProcess extends AppCompatActivity {
         super.onStart();
         SystemRequirementsChecker.checkWithDefaultDialogs(this);
     }
+    private ScanCallback mScanCallback = new ScanCallback() {
+        @Override
+        public void onScanResult(int callbackType, ScanResult result) {
+            Log.i("callbackType", String.valueOf(callbackType));
+            Log.i("result", result.toString());
+            BluetoothDevice btDevice = result.getDevice();
+           // connectToDevice(btDevice);
 
-        private void mScanCallbackfunc(){
-            if (Build.VERSION.SDK_INT >= 21) {
-                mScanCallback = new ScanCallback() {
-                    @Override
-                    public void onScanResult(int callbackType, ScanResult result) {
-                        Log.i("callbackType", String.valueOf(callbackType));
-                        Log.i("result", result.toString());
-                        Log.i("onLeScan", result.toString());
+            if(btDevice.getName()!=null && !connectedPOS){
+                Log.i("btName", btDevice.getName());
 
-                        BluetoothDevice btDevice = result.getDevice();
-                        if(btDevice.getName()!=null){
-                            Log.i("btName", btDevice.getName());
-                            if(btDevice.getName().equals(pos_address)){
-                                connectToDevice(btDevice);
-                                if(!jpake.round1) {
-                                    try {
+                if(btDevice.getName().equals(pos_address)) {
+                    Log.i("lescan detected", pos_address);
 
-                                        round1 = jpake.jpakeRound1();
+                    connectToDevice(btDevice);
 
-                                        Log.d("round1", String.valueOf(round1.length));
-                                        updateLogs(round1);
-                                        jpake.round1 = true;
-                                        sendData(round1);
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    } catch (DataFormatException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
+                    connectedPOS = true;
+                    if (!jpake.round1) {
+                        try {
+                            round1 = jpake.jpakeRound1();
+                            Log.d("round1", String.valueOf(round1.length));
+                            jpake.round1=true;
+                            updateLogs(round1);
 
-                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (DataFormatException e) {
+                            e.printStackTrace();
                         }
 
-
                     }
+                }
+            }
 
-                    @Override
-                    public void onBatchScanResults(List<ScanResult> results) {
-                        for (ScanResult sr : results) {
-                            Log.i("ScanResult - Results", sr.toString());
-                        }
-                    }
+        }
 
-                    @Override
-                    public void onScanFailed(int errorCode) {
-                        Log.e("Scan Failed", "Error Code: " + errorCode);
-                    }
-                };
+        @Override
+        public void onBatchScanResults(List<ScanResult> results) {
+            for (ScanResult sr : results) {
+                Log.i("ScanResult - Results", sr.toString());
             }
         }
+
+        @Override
+        public void onScanFailed(int errorCode) {
+            Log.e("Scan Failed", "Error Code: " + errorCode);
+        }
+    };
+
+//    private void mScanCallbackfunc(){
+//            if (Build.VERSION.SDK_INT >= 21) {
+//                mScanCallback = new ScanCallback() {
+//                    @Override
+//                    public void onScanResult(int callbackType, ScanResult result) {
+//                        Log.i("callbackType", String.valueOf(callbackType));
+//                        Log.i("result", result.toString());
+//                        Log.i("onLeScan", result.toString());
+//
+//                        BluetoothDevice btDevice = result.getDevice();
+//                        if(btDevice.getName()!=null){
+//                            Log.i("btName", btDevice.getName());
+//                            if(btDevice.getName().equals(pos_address)){
+//                                connectToDevice(btDevice);
+//                                if(!jpake.round1) {
+//                                    try {
+//
+//                                        round1 = jpake.jpakeRound1();
+//
+//                                        Log.d("round1", String.valueOf(round1.length));
+//                                        updateLogs(round1);
+//                                        jpake.round1 = true;
+//                                        sendData(round1);
+//                                    } catch (IOException e) {
+//                                        e.printStackTrace();
+//                                    } catch (DataFormatException e) {
+//                                        e.printStackTrace();
+//                                    }
+//                                }
+//
+//                            }
+//                        }
+//
+//
+//                    }
+//
+//                    @Override
+//                    public void onBatchScanResults(List<ScanResult> results) {
+//                        for (ScanResult sr : results) {
+//                            Log.i("ScanResult - Results", sr.toString());
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onScanFailed(int errorCode) {
+//                        Log.e("Scan Failed", "Error Code: " + errorCode);
+//                    }
+//                };
+//            }
+//        }
 
     private BluetoothAdapter.LeScanCallback mLeScanCallback =
             new BluetoothAdapter.LeScanCallback() {
@@ -344,6 +390,7 @@ public class PaymentProcess extends AppCompatActivity {
         if (mGatt == null) {
             mGatt = device.connectGatt(this, false, gattCallback);
             scanLeDevice(false);// will stop after first device detection
+            mGatt.requestMtu(600);
         }
     }
 
@@ -368,15 +415,23 @@ public class PaymentProcess extends AppCompatActivity {
         }
 
         @Override
+        public void onMtuChanged (BluetoothGatt gatt, int mtu, int status){
+            Log.d("MTUSIZE", String.valueOf(mtu));
+        }
+        @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             super.onServicesDiscovered(gatt, status);
+            Log.d("lama0","lama0");
             services = mGatt.getServices();
             for(BluetoothGattService service : services){
+
                 if( service.getUuid().equals(SERVICE_UUID)) {
+
                     characteristicData = service.getCharacteristic(CHAR_UUID);
                     for (BluetoothGattDescriptor descriptor : characteristicData.getDescriptors()) {
                         descriptor.setValue( BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
                         mGatt.writeDescriptor(descriptor);
+
                     }
                     gatt.setCharacteristicNotification(characteristicData, true);
                 }
@@ -393,30 +448,38 @@ public class PaymentProcess extends AppCompatActivity {
         }
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-
+            Log.i("onCharacteristicRead", "onCharacteristicRead");
         }
 
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-
-            if(packetInteration<packetSize){
-                Log.d("packetLength",String.valueOf(packets.length));
-                Log.d("interation",packetInteration.toString());
-                Log.d("packetSize", String.valueOf(packets[packetInteration].length));
-                Log.d("value", new String(packets[packetInteration]));
-            characteristicData.setValue(packets[packetInteration]);
-            mGatt.writeCharacteristic(characteristicData);
-                packetInteration++;
-            }else if(jpake.round2 && packetInteration == packetSize && protoclCount == 3){
-                    Log.d("packetLength",String.valueOf(packets.length));
-                    Log.d("interation",packetInteration.toString());
+            Log.i("onCharacteristicWrite", "onCharacteristicWrite");
+            while(packetInteration<packetSize) {
+                if (packetInteration < packetSize) {
+                    Log.d("packetLength", String.valueOf(packets.length));
+                    Log.d("interation", packetInteration.toString());
                     Log.d("packetSize", String.valueOf(packets[packetInteration].length));
                     Log.d("value", new String(packets[packetInteration]));
                     characteristicData.setValue(packets[packetInteration]);
                     mGatt.writeCharacteristic(characteristicData);
-                packetInteration++;
+                    packetInteration++;
+                } else if (jpake.round2 && packetInteration == packetSize && protoclCount == 3) {
+                    Log.d("packetLength", String.valueOf(packets.length));
+                    Log.d("interation", packetInteration.toString());
+                    Log.d("packetSize", String.valueOf(packets[packetInteration].length));
+                    Log.d("value", new String(packets[packetInteration]));
+                    characteristicData.setValue(packets[packetInteration]);
+                    mGatt.writeCharacteristic(characteristicData);
+                    packetInteration++;
+                }
+                try {
+                    Thread.sleep(4000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
+
 
         }
 
@@ -542,21 +605,71 @@ public class PaymentProcess extends AppCompatActivity {
     }
 
 
+//    public void sendData(byte [] data){
+//        packetInteration =0;
+//        int chunksize = 18;
+//        Log.d("dataLength",String.valueOf(data.length));
+//        packetSize = (int) Math.ceil( data.length / (double)chunksize);
+//        Integer tamp = packetSize;
+//        characteristicData.setValue(packetSize.toString().getBytes());
+//        // characteristicData.setValue(data);
+//        mGatt.writeCharacteristic(characteristicData);
+//        mGatt.executeReliableWrite();
+//        chunksize = 540;
+//        Log.d("dataLength",String.valueOf(data.length));
+//        packetSize = (int) Math.ceil( data.length / (double)chunksize);
+//        Log.d("dataLength",String.valueOf(data.length));
+//        Log.d("packetSize",packetSize.toString());
+//        packets = new byte[packetSize][chunksize];
+//        Integer start = 0;
+//        int x =0;
+//
+//        if(jpake.round2 && protoclCount == 3){
+//            //bugs on second protocol, first byte not send, sowe made dummy bytes
+//            //packetSize;
+//            x=1;
+//            packets = new byte[packetSize+1][chunksize];
+//            packets[0] = tamp.toString().getBytes();
+//        }
+//        for(int i = x; i < packets.length; i++) {
+//            int end = start+chunksize;
+//            if(end>data.length){end = data.length;}
+//            packets[i] = Arrays.copyOfRange(data,start, end);
+//            start += chunksize;
+//        }
+//        //packets[0] = data;
+//
+//
+//
+//
+//
+//
+//        //packets will be send in onCharacteristicRead.
+//    }
+
     public void sendData(byte [] data){
         packetInteration =0;
-        int chunksize = 20;
+        int chunksize = 18;
         Log.d("dataLength",String.valueOf(data.length));
+        packetSize = (int) Math.ceil( data.length / (double)chunksize);
+        Integer tamp = packetSize;
+        characteristicData.setValue(packetSize.toString().getBytes());
+        // characteristicData.setValue(data);
+        mGatt.writeCharacteristic(characteristicData);
+        mGatt.executeReliableWrite();
+        chunksize = 600;
         packetSize = (int) Math.ceil( data.length / (double)chunksize);
         Log.d("packetSize",packetSize.toString());
         packets = new byte[packetSize][chunksize];
         Integer start = 0;
         int x =0;
+
         if(jpake.round2 && protoclCount == 3){
             //bugs on second protocol, first byte not send, sowe made dummy bytes
             //packetSize;
             x=1;
             packets = new byte[packetSize+1][chunksize];
-            packets[0] = new byte[5];
+            packets[0] = packetSize.toString().getBytes();
         }
         for(int i = x; i < packets.length; i++) {
             int end = start+chunksize;
@@ -564,9 +677,13 @@ public class PaymentProcess extends AppCompatActivity {
             packets[i] = Arrays.copyOfRange(data,start, end);
             start += chunksize;
         }
-        characteristicData.setValue(packetSize.toString().getBytes());
-        mGatt.writeCharacteristic(characteristicData);
-        mGatt.executeReliableWrite();
+
+        //packets[0] = data;
+
+
+
+
+
 
         //packets will be send in onCharacteristicRead.
     }
