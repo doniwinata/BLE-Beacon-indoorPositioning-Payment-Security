@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "830171016268",
+    "firebase_url": "https://ble-beacon-indoorpositioning-p.firebaseio.com",
+    "project_id": "ble-beacon-indoorpositioning-p",
+    "storage_bucket": "ble-beacon-indoorpositioning-p.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:830171016268:android:b88e61a642bef047",
+        "android_client_info": {
+          "package_name": "com.example.idsl.blepayment"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "830171016268-e280nm0orls1rp6jeg9k1f8sur0imtor.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.idsl.blepayment",
+            "certificate_hash": "F0733F5F51EB2918EEAD43C7BE60F3424DC9D2AE"
+          }
+        },
+        {
+          "client_id": "830171016268-a20tiff4c5nngpbcvqvlhe0sislofelg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXfrbj7pbdtYUw8yXIeeHagkS2INkG6rs"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "830171016268-a20tiff4c5nngpbcvqvlhe0sislofelg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

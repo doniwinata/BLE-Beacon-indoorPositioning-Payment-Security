@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        is-multidex="true"
+        jar="E:\Androidsdk\sdk\extras\android\m2repository\com\android\support\support-annotations\23.4.0\support-annotations-23.4.0.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="23.0.2"
+        sha1="ffbe55fdb2bb456b1485831706a9eac3300bb6b8">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\support-annotations-23.4.0_58fbfd6711bee9b725ab03bd519d6f2e064a52a2\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\a1ba337846b395cd88e3e70c44faab737c26f79a\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="548f06de403a9409f00554b3ee12a9fdea0e236c">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_41354871cf9ad551d24c46ce3938d1ca9d30c04b\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\ed4cee71f86f458439e4f6ee12eb1931ccac3ebd\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="84bf369090a8f7e293817efbd6ccf31ada1be32b">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_8e7c4e78dacc994e06dccc2061d19dd4637b9617\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\4424de659e175c0bd5bd8a3c5aefc9a7bb0caa39\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="4b630471536351be7c3c3100735c75b7ad2cbd84">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_3cab46f7d61764395f9ebc4e33ac2b61d7f403ea\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="E:\Androidsdk\sdk\extras\android\m2repository\com\android\support\support-annotations\23.4.0\support-annotations-23.4.0.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="ffbe55fdb2bb456b1485831706a9eac3300bb6b8">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\support-annotations-23.4.0_58fbfd6711bee9b725ab03bd519d6f2e064a52a2\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\incremental-classes\debug\instant-run-bootstrap.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="b21e5844aebcc12576c84c2117e8853021f40bc5">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10000\instant-run-bootstrap_2decdaa018b0de9c069daa4f4e9169c5abd3ffe6\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\9c08bc48f7f649e426535b33e98d88eb3e5a3556\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="618485fef3ebe12127f7622abbc9b5b39057b5c2">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_135ed9172f05d0058264a1ec0f53e669b8413150\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\573aab69f704ef82e3398e97824ec90db1e4daee\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="c2c594cace5d83a3227b2b6e658ecbfd586d3ed9">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_65067180892a62aacd5a672f72410e1a4287aa50\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\9b7e242e7d563aeb2ed33803ac230afa2b512cb0\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="3dee4ce5844d39d843d503fb8fe04e51e5bfffac">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_b8e1e9969202107aa2363e1e6bdc7dd4019dacde\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\07029c7deb9e4596114f2f192d37a4d5bf32b1a7\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="3b7173b3df4c7029699919414400041f64519e34">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_a90b41c74fdd374f50cdfe4f055065909b526ac4\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\0b1f327d85a4a48b2d728858754685515686663b\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="b3aee285fb75f9d81f1a77e1ad9bebc7b5125ab0">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_37d97d2fc90e039a5ea0eb3091e81fa250bb776b\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\7e73d53ca32b8e29c1560b992b08abb2c6494966\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="de4db3785756bfb0915a9f59a9b3f2fea7407be4">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_2ddb5bfd081e396f3b16c41f6182eb2a79a83ae2\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\5c79b4be064cf9ffb5dba2eecacaa11fe206cbbb\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="a440fb3fec30ff925e9f601cc458fb6671834cb2">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_5d6c99e8328ebcf7e8907940efed4f9964d183f6\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\64d378784f9a0a970ba33397141c95659b3cea88\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="18b5697c65c4fe5b7381613b8b8ae9ac52e26fa7">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_c6dc59c45af3584523f2af62cd261381eefa8e42\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\a03dfcb246bfb45708b32ddfa8d647517c153e20\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="0e4d53465cc141bec58f18a894e4c4e80633fa32">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_95c3ce892fb4f6286b743584569632b2bb28e947\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\246baf56487a4021e2f773c9fa788a78fe14f915\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="8a36d229011e75f0caef408e1adf0d3fd4d94e02">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_62475c8d0e9d2cda84873522b91b2a255bfbe6bf\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\2bcdd9fec0b70c5ee056aec2892c3a1fa5a522f1\output\jars\libs\internal_impl-23.4.0.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="ea3c07504d2c8f4b13aa17c45c1b68ed9c1c3674">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\internal_impl-23.4.0_789801909bdf05edd21ea8d8f82d898e9c30d968\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\85e9c3d7ecda981760f69255e66b7431ab8fd2a4\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="6bc41d9d6fd12d2ef23c785a259011001f4a1a5b">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_b2d4f229c6efbd8d378ab571cf112ca35b1bb864\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\2bcdd9fec0b70c5ee056aec2892c3a1fa5a522f1\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="67bd36ee9340ec7c254108936ad16b24bed160cc">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_94680606f9501f298ea383a64a85eab80a6392e6\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\9d4ecdb2cc1aa301ec53422e5ce64209bade6300\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="34762013d39dbe6c656050589c44e8b61b9a2c5d">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_478dfe8a5852d33565fd2272b9314cf63b8cb183\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\incremental-runtime-classes\debug\instant-run.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="c82741bc129dd5f99f11a4ab8666ae24262053b6">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10000\instant-run_198fb5a29ba23b8746514101b70db9b8d809c17e\classes.dex" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Doni\.android\build-cache\3bfbdca906d3206c1f2438afe9b71b8a3086783c\output\jars\classes.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="25.0.0"
+        sha1="88848548ab56d4fbf3d2d1b0c85bf1ff9b4c1f4b">
+        <dex dex="F:\Thesis\blePayment2\BLE-Beacon-indoorPositioning-Payment-Security\app\build\intermediates\transforms\dex\debug\folders\1000\10\classes_94b7b4c52d71b6316b428134ba4bf4477c833f29\classes.dex" />
+    </item>
+
+</items>

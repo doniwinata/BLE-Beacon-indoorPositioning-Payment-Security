@@ -25,6 +25,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -38,6 +39,8 @@ import android.widget.TextView;
 import com.estimote.sdk.BeaconManager;
 import com.estimote.sdk.Region;
 import com.estimote.sdk.SystemRequirementsChecker;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -61,12 +64,13 @@ public class PaymentProcess extends AppCompatActivity {
 
     private Button paymentButton;
 
-
+    private Long TimeofProtocol;
+    private Long cursorTime;
     //we set the address of Point of sales in the device name.
     private String pos_address="BLE client";
     public static final java.util.UUID SERVICE_UUID = java.util.UUID.fromString("00001111-0000-1000-8000-00805F9B34FB");
     public static final java.util.UUID CHAR_UUID = java.util.UUID.fromString("00002222-0000-1000-8000-00805F9B34FB");
-    public TextView connected_device,log_view;
+    public TextView connected_device,log_view, info_text;
     public String tampLogs = "Logs:\n";
     private SharedPreferences preferences;
     private SharedPreferences.Editor editPref;
@@ -97,6 +101,8 @@ public class PaymentProcess extends AppCompatActivity {
     public boolean connectedPOS = false;
     private static int NOTIFICATION_ID = 0;
     public byte[][] packets;
+   public FirebaseDatabase database = FirebaseDatabase.getInstance();
+    public DatabaseReference myRef = database.getReference();
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -109,7 +115,8 @@ public class PaymentProcess extends AppCompatActivity {
         //set secret sharing
 
 
-
+        info_text  = (TextView) findViewById(R.id.info_text_payment);
+        info_text.setText("Key Agreement Protocol");
         connected_device = (TextView) findViewById(R.id.tx_connected);
         log_view = (TextView) findViewById(R.id.tx_logs);
         log_view.setMovementMethod(new ScrollingMovementMethod());
@@ -152,6 +159,7 @@ public class PaymentProcess extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 //sendData(round1);
+                cursorTime = System.currentTimeMillis();
                 try {
                     updateLogs(round3);
                     sendData(round3);
@@ -257,16 +265,21 @@ public class PaymentProcess extends AppCompatActivity {
 
             if(btDevice.getName()!=null && !connectedPOS){
                 Log.i("btName", btDevice.getName());
-
                 if(btDevice.getName().equals(pos_address)) {
                     Log.i("lescan detected", pos_address);
-
+                    connected_device.setText(btDevice.getName());
                     connectToDevice(btDevice);
 
                     connectedPOS = true;
                     if (!jpake.round1) {
+
+
                         try {
+                            cursorTime = System.currentTimeMillis();
                             round1 = jpake.jpakeRound1();
+                            //log to firebase
+                            compress.timeSpan(TimeofProtocol,cursorTime,"1_JpakeRound1",myRef);
+                            cursorTime = System.currentTimeMillis();
                             Log.d("round1", String.valueOf(round1.length));
                             jpake.round1=true;
                             updateLogs(round1);
@@ -392,6 +405,8 @@ public class PaymentProcess extends AppCompatActivity {
             scanLeDevice(false);// will stop after first device detection
             mGatt.requestMtu(600);
         }
+        TimeofProtocol = System.currentTimeMillis();
+
     }
 
 
@@ -400,7 +415,9 @@ public class PaymentProcess extends AppCompatActivity {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             super.onConnectionStateChange(gatt, status, newState);
             if(newState == BluetoothProfile.STATE_CONNECTED) {
+
                 mGatt.discoverServices();
+                //compress.timeSpan(TimeofProtocol,cursorTime,"2_ServiceDiscovery",myRef);
             }else{
 //                if(dialog.isShowing()){
 //                    mHandler.post(new Runnable() {
@@ -421,8 +438,10 @@ public class PaymentProcess extends AppCompatActivity {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             super.onServicesDiscovered(gatt, status);
-            Log.d("lama0","lama0");
+            //System.out.println("SERVICE_SIZE_TIME:"+ (System.currentTimeMillis() - time));
+            float time = System.currentTimeMillis();
             services = mGatt.getServices();
+            System.out.println("SERVICE_SIZE:"+services);
             for(BluetoothGattService service : services){
 
                 if( service.getUuid().equals(SERVICE_UUID)) {
@@ -436,6 +455,11 @@ public class PaymentProcess extends AppCompatActivity {
                     gatt.setCharacteristicNotification(characteristicData, true);
                 }
             }
+
+            //log to firebase
+            compress.timeSpan(TimeofProtocol,cursorTime,"2_ServiceDiscovery",myRef);
+            cursorTime = System.currentTimeMillis();
+
             sendData(round1);
 //            if (dialog.isShowing()){
 //                mHandler.post(new Runnable() {
@@ -455,7 +479,7 @@ public class PaymentProcess extends AppCompatActivity {
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             Log.i("onCharacteristicWrite", "onCharacteristicWrite");
-            while(packetInteration<packetSize) {
+
                 if (packetInteration < packetSize) {
                     Log.d("packetLength", String.valueOf(packets.length));
                     Log.d("interation", packetInteration.toString());
@@ -472,13 +496,15 @@ public class PaymentProcess extends AppCompatActivity {
                     characteristicData.setValue(packets[packetInteration]);
                     mGatt.writeCharacteristic(characteristicData);
                     packetInteration++;
+                    compress.timeSpan(TimeofProtocol,cursorTime,"6_JpakeRound2CtoS",myRef);
+                    cursorTime = System.currentTimeMillis();
                 }
-                try {
-                    Thread.sleep(4000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            if(!jpake.round2&&packetInteration==packetSize){
+                compress.timeSpan(TimeofProtocol,cursorTime,"3_JpakeRound1_CtoS",myRef);
+
+                cursorTime = System.currentTimeMillis();
             }
+
 
 
         }
@@ -489,6 +515,10 @@ public class PaymentProcess extends AppCompatActivity {
             byte[] value=characteristic.getValue();
             //read how many packets
             if(numPackets==0) {
+                if(protoclCount==3){
+                    //to detect server to c on round 2 starting
+                    cursorTime = System.currentTimeMillis();
+                }
                 packetFinish=false;
                 packetData = new byte[0];
                 numPackets = Integer.valueOf(new String(value));
@@ -545,22 +575,38 @@ public class PaymentProcess extends AppCompatActivity {
             tampLogs+="\n"+element;
 
         }
-
+        if(protoclCount ==1 && !jpake.round2){
+            compress.timeSpan(TimeofProtocol,cursorTime,"4_JpakeRound1_StoC",myRef);
+            cursorTime = System.currentTimeMillis();
+        }
+        else if(jpake.round2 && protoclCount==3){
+            compress.timeSpan(TimeofProtocol,cursorTime,"6_JpakeRound2StoC",myRef);
+            cursorTime = System.currentTimeMillis();
+        }
         jpake.updateValue(result);
         protoclCount++;
         if(protoclCount==2 && jpake.round2 == false){
+
             //means ready for round 2
             round2 = jpake.jpakeRound2();
+
+            compress.timeSpan(TimeofProtocol,cursorTime,"5_JpakeRound2",myRef);
             Log.d("protocol", "round 2 running");
             updateLogs(round2);
             try {
-                Thread.sleep(500);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
             jpake.round2=true;
+            cursorTime = System.currentTimeMillis();
             sendData(round2);
+        }else if(jpake.round2 && protoclCount==4){
+            compress.timeSpan(TimeofProtocol,cursorTime,"7_sessionKeyCalculation",myRef);
+            compress.timeSpan(TimeofProtocol,TimeofProtocol,"8_SessionKeyConstruction",myRef);
+
+            cursorTime = System.currentTimeMillis();
         }
         runOnUiThread(new Runnable() {
             @Override
@@ -568,6 +614,7 @@ public class PaymentProcess extends AppCompatActivity {
                 if(jpake.finalSKey!="" &&protoclCount == 4 && !jpake.round3 ){
                     tampLogs+="\n------------------- \nFinal Key: "+jpake.getfinalSKey()+"\n Final Nonce: "+jpake.getFinalNonce();
                     try {
+
                         round3 = jpake.pprotocolRound1();
                         jpake.round3 =true;
                         if(dialog.isShowing()){
@@ -575,6 +622,7 @@ public class PaymentProcess extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     dialog.hide();
+                                    info_text.setText("Key Agreement Completed");
                                 }
                             });
                         }
@@ -590,6 +638,7 @@ public class PaymentProcess extends AppCompatActivity {
                         jpake.round4 =true;
                         updateLogs(round4);
                         sendData(round4);
+                        compress.timeSpan(TimeofProtocol,cursorTime,"ProposedProtocol",myRef);
                         sendNotification("Payment Complete !");
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -605,51 +654,9 @@ public class PaymentProcess extends AppCompatActivity {
     }
 
 
-//    public void sendData(byte [] data){
-//        packetInteration =0;
-//        int chunksize = 18;
-//        Log.d("dataLength",String.valueOf(data.length));
-//        packetSize = (int) Math.ceil( data.length / (double)chunksize);
-//        Integer tamp = packetSize;
-//        characteristicData.setValue(packetSize.toString().getBytes());
-//        // characteristicData.setValue(data);
-//        mGatt.writeCharacteristic(characteristicData);
-//        mGatt.executeReliableWrite();
-//        chunksize = 540;
-//        Log.d("dataLength",String.valueOf(data.length));
-//        packetSize = (int) Math.ceil( data.length / (double)chunksize);
-//        Log.d("dataLength",String.valueOf(data.length));
-//        Log.d("packetSize",packetSize.toString());
-//        packets = new byte[packetSize][chunksize];
-//        Integer start = 0;
-//        int x =0;
-//
-//        if(jpake.round2 && protoclCount == 3){
-//            //bugs on second protocol, first byte not send, sowe made dummy bytes
-//            //packetSize;
-//            x=1;
-//            packets = new byte[packetSize+1][chunksize];
-//            packets[0] = tamp.toString().getBytes();
-//        }
-//        for(int i = x; i < packets.length; i++) {
-//            int end = start+chunksize;
-//            if(end>data.length){end = data.length;}
-//            packets[i] = Arrays.copyOfRange(data,start, end);
-//            start += chunksize;
-//        }
-//        //packets[0] = data;
-//
-//
-//
-//
-//
-//
-//        //packets will be send in onCharacteristicRead.
-//    }
-
     public void sendData(byte [] data){
         packetInteration =0;
-        int chunksize = 18;
+        int chunksize = 20;
         Log.d("dataLength",String.valueOf(data.length));
         packetSize = (int) Math.ceil( data.length / (double)chunksize);
         Integer tamp = packetSize;
@@ -657,8 +664,10 @@ public class PaymentProcess extends AppCompatActivity {
         // characteristicData.setValue(data);
         mGatt.writeCharacteristic(characteristicData);
         mGatt.executeReliableWrite();
-        chunksize = 600;
+        //chunksize = 540;
+        Log.d("dataLength",String.valueOf(data.length));
         packetSize = (int) Math.ceil( data.length / (double)chunksize);
+        Log.d("dataLength",String.valueOf(data.length));
         Log.d("packetSize",packetSize.toString());
         packets = new byte[packetSize][chunksize];
         Integer start = 0;
@@ -669,7 +678,7 @@ public class PaymentProcess extends AppCompatActivity {
             //packetSize;
             x=1;
             packets = new byte[packetSize+1][chunksize];
-            packets[0] = packetSize.toString().getBytes();
+            packets[0] = tamp.toString().getBytes();
         }
         for(int i = x; i < packets.length; i++) {
             int end = start+chunksize;
@@ -677,7 +686,6 @@ public class PaymentProcess extends AppCompatActivity {
             packets[i] = Arrays.copyOfRange(data,start, end);
             start += chunksize;
         }
-
         //packets[0] = data;
 
 
@@ -687,6 +695,47 @@ public class PaymentProcess extends AppCompatActivity {
 
         //packets will be send in onCharacteristicRead.
     }
+
+//    public void sendData(byte [] data){
+//        packetInteration =0;
+//        int chunksize = 18;
+//        Log.d("dataLength",String.valueOf(data.length));
+//        packetSize = (int) Math.ceil( data.length / (double)chunksize);
+//        Integer tamp = packetSize;
+//        characteristicData.setValue(packetSize.toString().getBytes());
+//        // characteristicData.setValue(data);
+//        mGatt.writeCharacteristic(characteristicData);
+//        mGatt.executeReliableWrite();
+//        chunksize = 600;
+//        packetSize = (int) Math.ceil( data.length / (double)chunksize);
+//        Log.d("packetSize",packetSize.toString());
+//        packets = new byte[packetSize][chunksize];
+//        Integer start = 0;
+//        int x =0;
+//
+//        if(jpake.round2 && protoclCount == 3){
+//            //bugs on second protocol, first byte not send, sowe made dummy bytes
+//            //packetSize;
+//            x=1;
+//            packets = new byte[packetSize+1][chunksize];
+//            packets[0] = packetSize.toString().getBytes();
+//        }
+//        for(int i = x; i < packets.length; i++) {
+//            int end = start+chunksize;
+//            if(end>data.length){end = data.length;}
+//            packets[i] = Arrays.copyOfRange(data,start, end);
+//            start += chunksize;
+//        }
+//
+//        //packets[0] = data;
+//
+//
+//
+//
+//
+//
+//        //packets will be send in onCharacteristicRead.
+//    }
 
     private void sendNotification(String message){
         NotificationManager mNotificationManager = (NotificationManager)

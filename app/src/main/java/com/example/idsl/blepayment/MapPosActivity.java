@@ -10,6 +10,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -20,11 +21,15 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.RadioButton;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
@@ -70,8 +75,10 @@ public class MapPosActivity extends AppCompatActivity {
     //mode for calculation of observed distance
     //0: real distance, 1: Average, 2: Median
     public int Mode = 0;
-    public int ModeIndoorAlgorithm = 0;
-    public String detect = "outside";
+    //mode for calculation of observed distance
+    //0: Weight Average, 1: Pythagoras & Eucludian
+    public int ModeIndoorAlgorithm = 1;
+    public String detect = "no";
     //size of the map/picture in pixels
 
     private int widthPixels;
@@ -87,6 +94,17 @@ public class MapPosActivity extends AppCompatActivity {
     private HashMap<Integer, Double> distanceAvg = new HashMap<Integer, Double>();
     private HashMap<Integer, float[]> beaconDist = new HashMap<Integer, float[]>();
     public  Button paymentButton;
+    public EditText realPosition;
+    public ProgressBar progress_timer;
+    public MyCountDownTimer myCountDownTimer;
+    public CheckBox checkbox_automatic;
+    public Boolean automatic_payment = false;
+    public Boolean payStart = false;
+    private Boolean recordExperiment = false;
+
+    public FirebaseDatabase database = FirebaseDatabase.getInstance();
+    public DatabaseReference myRef = database.getReference();
+
     @Override
     protected  void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
@@ -98,15 +116,16 @@ public class MapPosActivity extends AppCompatActivity {
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
         editPref = preferences.edit();
         //firebase
-
-
+        progress_timer = (ProgressBar)findViewById(R.id.progress_timer);
+        checkbox_automatic = (CheckBox) findViewById(R.id.checkbox_automatic);
+        realPosition = (EditText) findViewById(R.id.realPosition);
         //retrieve the size of the map in meters.
         mapXSize = preferences.getFloat("map_x",10);
         mapYSize = preferences.getFloat("map_y",10);
 
         //Display the map size above the map.
         final TextView mapInfo = (TextView) findViewById(R.id.map_size);
-        mapInfo.setText("\n The Map Size(x,y): \t" + mapXSize +", " + mapYSize +"\n");
+       // mapInfo.setText("\n The Map Size(x,y): \t" + mapXSize +", " + mapYSize +"\n");
 
         mapImage = (ImageView) findViewById(R.id.map_picture);
         mapImage.setAdjustViewBounds(true);
@@ -123,6 +142,7 @@ public class MapPosActivity extends AppCompatActivity {
         //Reset the distances and measurements counter to default within the scanning method.
         final Button resetButton = (Button) findViewById(R.id.reset_pos);
         paymentButton = (Button) findViewById(R.id.btn_payment);
+
         paymentButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -214,7 +234,7 @@ public class MapPosActivity extends AppCompatActivity {
                     @Override
                     public void run() {
 
-                        getSupportActionBar().setSubtitle("Found Beacons(x): " + beaconList.size());
+                        getSupportActionBar().setSubtitle("Found Beacons : " + beaconList.size());
                         mapInfo.setText("The map size(x, y): \t " +mapXSize+ ", "+mapYSize + "\n");
 
                         //Reset everything to default values when the button is pressed
@@ -226,16 +246,22 @@ public class MapPosActivity extends AppCompatActivity {
                         //copy the woringBitmap for a clean sheet for the Canvas.
                         final Bitmap mutableBitmap= workingBitmap.copy(Bitmap.Config.ARGB_8888, true);
                         final Canvas canvas = new Canvas(mutableBitmap);
-
+                        Paint paint = new Paint();
+                        // canvas.drawPaint(paint);
+                        paint.setColor(Color.BLACK);
+                        paint.setStyle(Paint.Style.FILL);
+                        paint.setTextSize(paint.getTextSize() * 8);
                         //draw a circle for each beacon on the map
+                        //canvas.drawText("0,0", 2,2, paint);
+
+
                         for (int i = 0; i < beaconList.size();i++){
                             Beacon currentBeacon = beaconList.get(i);
                             int minorVal = currentBeacon.getMinor();
-                            if(minorVal <4){
+                            if(minorVal < 5){
                             //get secret and put to preferences
 
                             if(preferences.getString("secretBeacon"+String.valueOf(minorVal),"")==""){
-                                Log.d("masukGetSecretBeacon",String.valueOf(minorVal));
                                 getSecretBeacon(String.valueOf(minorVal));
                                // Log.d("VALUE PREFERENCES",preferences.getString("secretBeacon"+String.valueOf(minorVal),null));
                             }
@@ -257,24 +283,33 @@ public class MapPosActivity extends AppCompatActivity {
                             //predefined variables for creating a picture with drawn circles on it.
                             float[] locationBeacon = getLocation(currentBeacon);
                             //Draw a circle at the beacon position.
+
+                                canvas.drawText(String.valueOf(currentBeacon.getMinor()), locationBeacon[0], locationBeacon[1], paint);
+
                             canvas.drawCircle(locationBeacon[0], locationBeacon[1], (float) 0.02* widthPixels, paintBlue);
-                            mapInfo.append("Beacon "+String.valueOf(minorVal)+" : distance: " + String.valueOf(distanceAvg.get(minorVal).floatValue())+"\n");
+                            mapInfo.append("Distance of beacon "+String.valueOf(minorVal)+" to customer's device: " + String.valueOf(distanceAvg.get(minorVal).floatValue())+"\n");
                             }
                             }
-                        if(beaconList.size()>=2){
+                        if(beaconList.size()>2){
                             //System.out.println(beaconList.size());
                             if(ModeIndoorAlgorithm == 0){
                         userPos = userLocation(beaconList);
+                                //record
                             }else{
                                 userPos = userLocationNew(beaconList);
 
                             }
-                        mapInfo.append("User Position (x, y) " + userPos[0] + ", " + userPos[1] + "\n" + "Detection: " +
+                        mapInfo.append("User Position (x, y) " + userPos[0] + ", " + userPos[1] + "\n" + "Inside payment area ? : " +
                                 detect +"\n");
                         Log.d("paint","true");
                         canvas.drawCircle(widthPixels *(userPos[0]/mapXSize), heightPixels * (userPos[1]/mapYSize),
                                 (float) 0.02 * widthPixels, paintRed);
                         }
+                        if(measurements > 50){
+                            recordPosition(userPos[0], userPos[1]);
+                            measurements = 0;
+                        }
+                        measurements+=1;
                         //at least 40 measurements before calculating the user position.
 //                        if(measurements > 39){
 //
@@ -314,11 +349,13 @@ public class MapPosActivity extends AppCompatActivity {
     }
     private float[] userLocationNew(List<Beacon> beaconList){
         //get 2 beacon
-
+        int type = 0;
         for(int i =0; i< beaconList.size();i++){
             System.out.println(beaconList.size());
             int minorVal = beaconList.get(i).getMinor();
-            if(minorVal <4){
+
+            if(minorVal < 5){
+            type+=minorVal;
             float r;
             try {
 
@@ -344,13 +381,42 @@ public class MapPosActivity extends AppCompatActivity {
         }
         //now we have table of all observed beacons, position x,y in catersian and also distance from device stored in beaconObs.
         //we take 2 observed beacon to find our triangle, beaconObs[1] and beaconObs[2].
-        System.out.println(beaconDist.size());
-        int minor_beacon_1 = 1;
-        int minor_beacon_2 = 2;
-        int minor_beacon_3 = 3;
+        if(beaconDist.size()>=3){
+            int minor_beacon_1 = 1;
+            int minor_beacon_2 = 2;
+            int minor_beacon_3 = 3;
+
+            //type == 6 : 1, 2, 3
+        //type == 7 : 1, 2, 4
+        //type == 8 : 1, 3, 4
+        //type == 9 : 2, 3, 4
+            System.out.print("jumlah type = "+type);
+        if(type == 6){
+            System.out.print("masuk 6");
+            minor_beacon_1 = 1;
+            minor_beacon_2 = 2;
+            minor_beacon_3 = 3;
+        }else if(type == 7){
+            minor_beacon_1 = 1;
+            minor_beacon_2 = 2;
+            minor_beacon_3 = 4;
+        }else if(type == 8) {
+            minor_beacon_1 = 3;
+            minor_beacon_2 = 4;
+            minor_beacon_3 = 1;
+        }else if (type == 9){
+            minor_beacon_1 = 3;
+            minor_beacon_2 = 4;
+            minor_beacon_3 = 2;
+        }else  if(type == 10){
+            minor_beacon_1 = 1;
+            minor_beacon_2 = 2;
+            minor_beacon_3 = 3;
+        }
 
 
         //triangle
+        System.out.println(beaconDist);
         float dist_b1_b2 = (float)eucludianDistance(beaconDist.get(minor_beacon_1)[0],beaconDist.get(minor_beacon_2)[0],beaconDist.get(minor_beacon_1)[1],beaconDist.get(minor_beacon_2)[1]);
         float dist_b1_dev = beaconDist.get(minor_beacon_1)[2];
         float dist_b2_dev = beaconDist.get(minor_beacon_2)[2];
@@ -378,29 +444,39 @@ public class MapPosActivity extends AppCompatActivity {
         Log.d("Coordinate: X: ", String.valueOf(d_x) +"|Y: "+String.valueOf(d_y));
 
         double dist_b3_positive = eucludianDistance((float)d_x,(float)d_y,beaconDist.get(minor_beacon_3)[0],beaconDist.get(minor_beacon_3)[1]);
-        double dist_b3_negative = eucludianDistance((float)d_x,(float)d_y*-1+beaconDist.get(minor_beacon_1)[1],beaconDist.get(minor_beacon_3)[0],beaconDist.get(minor_beacon_3)[1]);
+        double dist_b3_negative = eucludianDistance((float)d_x,(float)d_y*-1 + 2*beaconDist.get(minor_beacon_1)[1],beaconDist.get(minor_beacon_3)[0],beaconDist.get(minor_beacon_3)[1]);
         Log.d("Coordinate: Positive: ", String.valueOf(dist_b3_positive) +"|Negative: "+String.valueOf(dist_b3_negative));
-        if(d_x>=preferences.getFloat("x1",-1) && d_x <= preferences.getFloat("x2",-1) && d_y >=preferences.getFloat("y1",-1)&& d_y <=preferences.getFloat("y3",-1)){
-            if(dist_b3_negative<dist_b3_positive){
-                detect = "outside";
-                paymentButton.setEnabled(false);
-                d_y = d_y*-1+beaconDist.get(minor_beacon_1)[1];
-            }else {detect = "inside";
-                paymentButton.setEnabled(true);}
-        }else
-        {
-            detect = "outside";
+       // Log.d("Coordinate: PositiveDiff: ", Math.abs(dist_b3_negative-dist_b3_dev) +"|NegativeDiff: "+Math.abs(dist_b3_positive -dist_b3_dev));
+            if(Math.abs(dist_b3_negative-dist_b3_dev) < Math.abs(dist_b3_positive -dist_b3_dev)){
 
+                d_y = d_y*-1+2*beaconDist.get(minor_beacon_1)[1];
+            }
+
+            //d_y = d_y*-1+2*beaconDist.get(minor_beacon_1)[1];
+            //d_y = d_y-beaconDist.get(minor_beacon_1)[1];
+            if(d_x>=preferences.getFloat("x1",-1) && d_x <= preferences.getFloat("x2",-1) && d_y >=preferences.getFloat("y1",-1)&& d_y <=preferences.getFloat("y3",-1)){
+                detect = "yes";
+                paymentButton.setEnabled(true);
+                startPayment();
+        }else{
+            detect = "no";
+                detect = "no";
+                paymentButton.setEnabled(false);
+                if(payStart) {
+                    myCountDownTimer.cancel();
+                }
+                progress_timer.setProgress(100);
+                payStart = false;
             paymentButton.setEnabled(false);
         }
 
 
-        Log.d("Coordinate: Detect: ",detect);
         //check if result x, greater than b2x, less than b3x, and y, greater than b1y, and less than b2y
         //if(d_x >= beaconDist.get(minor_beacon_1)[0] && d_x <=  )
 
         return new float[]{(float)d_x, (float)d_y, 1};
-
+        }
+        return new float[]{(float)0, (float)0, 1};
     }
 //    public float[] findLocationTriangle(){
 //
@@ -415,7 +491,7 @@ public class MapPosActivity extends AppCompatActivity {
         for (int i = 0; i < beaconsList.size(); i++) {
 
             int minorVal = beaconsList.get(i).getMinor();
-            if(minorVal <4){
+            if(minorVal < 5){
             float r;
             try {
              //   Log.d("minorVal: "+ String.valueOf(minorVal),String.valueOf(distanceAvg.size()));
@@ -487,11 +563,20 @@ public class MapPosActivity extends AppCompatActivity {
             }
         }
         if(x_user >= preferences.getFloat("x1", -1) && x_user <= preferences.getFloat("x2", -1) && y_user >= preferences.getFloat("y1", -1) && y_user <= preferences.getFloat("y3", -1)){
-            detect = "inside";
+            detect = "yes";
             paymentButton.setEnabled(true);
+            //run timer
+            //connect
+            startPayment();
+
+
         }else{
-            detect = "outside";
+            detect = "no";
             paymentButton.setEnabled(false);
+
+            myCountDownTimer.cancel();
+            progress_timer.setProgress(100);
+            payStart = false;
         }
 
         return new float[]{x_user, y_user, r_user};
@@ -561,27 +646,31 @@ public class MapPosActivity extends AppCompatActivity {
         float beaconY = preferences.getFloat("y" + minorVal, 0);
         //set for development only !!!
         //if(beaconX)
-        if(beaconX == -1 || beaconY == -1) {
+        if(beaconX == 0 || beaconY == 0) {
             if (minorVal == 1) {
-                editPref.putFloat("x1", 2);
-                editPref.putFloat("y1", 2);
+                editPref.putFloat("x1", 4);
+                editPref.putFloat("y1", 4);
                 editPref.putFloat("z1", 0);
-                beaconX = 2;
-                beaconY = 2;
+                beaconX = 4;
+                beaconY = 4;
             } else if (minorVal == 2) {
 
-                editPref.putFloat("x2", 4);
-                editPref.putFloat("y2", 2);
+                editPref.putFloat("x2", 6);
+                editPref.putFloat("y2", 4);
                 editPref.putFloat("z2", 0);
-                beaconX = 4;
-                beaconY = 2;
-            } else {
-
-                editPref.putFloat("x3", 2);
-                editPref.putFloat("y3", 4);
-                editPref.putFloat("z3", 0);
-                beaconX = 2;
+                beaconX = 6;
                 beaconY = 4;
+            } else if (minorVal == 3){
+
+                editPref.putFloat("x3", 4);
+                editPref.putFloat("y3", 6);
+                editPref.putFloat("z3", 0);
+                beaconX = 4;
+                beaconY = 6;
+            } else if (minorVal == 4) {
+                editPref.putFloat("x4", 6);
+                editPref.putFloat("y4", 6);
+                editPref.putFloat("z4", 0);
             }
             editPref.commit();
         }
@@ -760,11 +849,10 @@ public class MapPosActivity extends AppCompatActivity {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 // This method is called once with the initial value and again
                 // whenever data at this location is updated.
-                Log.d("marissa",minorVal);
+
                 String value = dataSnapshot.child(minorVal).child("secret").getValue(String.class);
                 String POS = dataSnapshot.child(minorVal).child("POS_ADDRESS").getValue(String.class);
-                Log.d("marissa",value);
-                Log.d("marissa",POS);
+
 
                 editPref.putString("secretBeacon"+minorVal, value);
                 editPref.commit();
@@ -776,6 +864,147 @@ public class MapPosActivity extends AppCompatActivity {
                 Log.w("Error", "Failed to read value.", error.toException());
             }
         });
+
+    }
+
+    public void onRadioButtonClicked(View view) {
+        // Is the button now checked?
+        boolean checked = ((RadioButton) view).isChecked();
+
+        // Check which radio button was clicked
+        switch(view.getId()) {
+            case R.id.radio_indoor_pythagoras:
+                if (checked)
+                    ModeIndoorAlgorithm = 1;
+                    resetDistance();
+                    Toast.makeText(getApplicationContext(),"Algorithm changed to Pythagoras and Eucludian Distance", Toast.LENGTH_SHORT);
+                    break;
+            case R.id.radio_indoor_average:
+                if (checked)
+                    ModeIndoorAlgorithm = 0;
+                    resetDistance();
+                    Toast.makeText(getApplicationContext(),"Algorithm changed to Weight Average", Toast.LENGTH_SHORT);
+                    break;
+        }
+    }
+
+    public void onCheckboxClicked(View view) {
+        // Is the button now checked?
+        boolean checked = ((CheckBox) view).isChecked();
+
+        // Check which radio button was clicked
+        switch(view.getId()) {
+            case R.id.checkbox_automatic:
+                if (checked){
+                    if(payStart) {
+                        myCountDownTimer.cancel();
+                    }
+                    paymentButton.setVisibility(View.GONE);
+                    automatic_payment = true;
+                    progress_timer.setProgress(100);
+
+                    payStart = false;
+                }else{
+                    if(payStart){
+                        myCountDownTimer.cancel();
+                    }
+                    automatic_payment = false;
+                    progress_timer.setProgress(100);
+                    payStart = false;
+                 paymentButton.setVisibility(View.VISIBLE);
+                }
+
+                Toast.makeText(getApplicationContext(),"Algorithm changed to Pythagoras and Eucludian Distance", Toast.LENGTH_SHORT);
+                break;
+            case R.id.record_experiment:
+                if (checked){
+
+                    recordExperiment= true;
+                }else{
+                    recordExperiment = false;
+                }
+
+                Toast.makeText(getApplicationContext(),"Algorithm changed to Pythagoras and Eucludian Distance", Toast.LENGTH_SHORT);
+                break;
+
+        }
+    }
+
+    public void onRadioButtonDistanceClicked(View view) {
+        // Is the button now checked?
+        boolean checked = ((RadioButton) view).isChecked();
+
+        // Check which radio button was clicked
+        switch(view.getId()) {
+            case R.id.radio_real_distance:
+                if (checked)
+                    Mode = 0;
+                resetDistance();
+                Toast.makeText(getApplicationContext(),"Calculation Algorithm changed to Real Distance", Toast.LENGTH_SHORT);
+                break;
+            case R.id.radio_average:
+                if (checked)
+                    Mode = 1;
+                resetDistance();
+                Toast.makeText(getApplicationContext(),"Calculation Algorithm changed to Average", Toast.LENGTH_SHORT);
+                break;
+            case R.id.radio_median:
+                if (checked)
+                    Mode = 2;
+                resetDistance();
+                Toast.makeText(getApplicationContext(),"Calculation Algorithm changed to Median", Toast.LENGTH_SHORT);
+                break;
+        }
+    }
+
+
+
+    public void startPayment(){
+        if(!payStart && automatic_payment) {
+            payStart = true;
+            progress_timer.setProgress(100);
+            myCountDownTimer = new MyCountDownTimer(10000, 500);
+            myCountDownTimer.start();
+        }
+    }
+
+    public void recordPosition(float x, float y){
+        if(recordExperiment)
+            compress.captureResult(String.valueOf(ModeIndoorAlgorithm),System.currentTimeMillis(),realPosition.getText().toString(),x, y,detect,myRef);
+    }
+
+    public class MyCountDownTimer extends CountDownTimer {
+
+        public MyCountDownTimer(long millisInFuture, long countDownInterval) {
+            super(millisInFuture, countDownInterval);
+        }
+
+        @Override
+        public void onTick(long millisUntilFinished) {
+           // textCounter.setText(String.valueOf(millisUntilFinished));
+            int progress = (int) (millisUntilFinished/100);
+            progress_timer.setProgress(progress);
+        }
+
+        @Override
+        public void onFinish() {
+            //textCounter.setText("Task completed");
+
+
+            payStart = true;
+            progress_timer.setProgress(0);
+            Intent paymentIntent = new Intent(MapPosActivity.this, PaymentProcess.class);
+
+            try {
+                beaconManager.stopRanging(ALL_ESTIMOTE_BEACONS_REGION);
+            } catch (Exception e) {
+            }
+            editPref.putBoolean("intent_stop", false);
+            editPref.commit();
+            startActivity(paymentIntent);
+        }
+
+
 
     }
 

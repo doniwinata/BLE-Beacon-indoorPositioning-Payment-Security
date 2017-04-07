@@ -3,4 +3,8 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+
+    <color name="colorBGItem">#F5F5F5</color>
+    <color name="separator">#0affffff</color>
+    <color name="year">#d4d1d1</color>
 </resources>

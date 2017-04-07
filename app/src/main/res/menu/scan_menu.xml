@@ -2,12 +2,13 @@
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <group  android:title="Indoor Positioning Algorithm"  android:id="@+id/grp1">
     <item android:id="@+id/btn_average"
-        android:title="Average"
-        android:showAsAction="always"/>
-    <item android:title="Triangle"
+        android:title="Average Weight"/>
+    <item android:title="Pythagoras and Eucludian Distance"
         android:id="@+id/btn_triangle" />
-    <group >
+    </group>
+    <group android:title="Distance Algorithm"  android:id="@+id/grp2">
         <item android:title="Distance Average"
             android:id="@+id/btn_distance_average" />
         <item android:title="Distance Median"
