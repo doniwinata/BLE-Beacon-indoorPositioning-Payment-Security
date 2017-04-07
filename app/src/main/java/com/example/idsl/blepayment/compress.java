@@ -59,10 +59,10 @@ public class compress {
     }
 
     public static void captureResult(String algorithm, Long TimeofTest, String realCoordinate, float x, float y, String result, DatabaseReference myRef){
-
-        myRef.child("Experiment").child(algorithm).child(realCoordinate).child(String.valueOf(TimeofTest)).child("x").setValue(x);
-        myRef.child("Experiment").child(algorithm).child(realCoordinate).child(String.valueOf(TimeofTest)).child("y").setValue(y);
-        myRef.child("Experiment").child(algorithm).child(realCoordinate).child(String.valueOf(TimeofTest)).child("result").setValue(result);
+        String results =realCoordinate+","+String.valueOf(x)+","+String.valueOf(y)+","+result;
+        myRef.child("Experiment").child(algorithm).child(String.valueOf(TimeofTest)).setValue(results);
+       // myRef.child("Experiment").child(algorithm).child(realCoordinate).child(String.valueOf(TimeofTest)).child("y").setValue(y);
+       // myRef.child("Experiment").child(algorithm).child(realCoordinate).child(String.valueOf(TimeofTest)).child("result").setValue(result);
 
     }
 

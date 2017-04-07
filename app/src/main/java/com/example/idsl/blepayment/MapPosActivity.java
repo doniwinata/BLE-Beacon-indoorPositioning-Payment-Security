@@ -44,8 +44,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.lang.reflect.Array;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -253,9 +255,19 @@ public class MapPosActivity extends AppCompatActivity {
                         paint.setTextSize(paint.getTextSize() * 8);
                         //draw a circle for each beacon on the map
                         //canvas.drawText("0,0", 2,2, paint);
-
-
+                        String[] Distancex;
+                        int counter = 0;
                         for (int i = 0; i < beaconList.size();i++){
+                            Beacon currentBeacon = beaconList.get(i);
+                            int minorVal = currentBeacon.getMinor();
+                            if(minorVal < 5){
+                                counter++;
+                            }
+                        }
+                        Distancex = new String[counter];
+                        counter = 0;
+                        for (int i = 0; i < beaconList.size();i++){
+
                             Beacon currentBeacon = beaconList.get(i);
                             int minorVal = currentBeacon.getMinor();
                             if(minorVal < 5){
@@ -287,8 +299,18 @@ public class MapPosActivity extends AppCompatActivity {
                                 canvas.drawText(String.valueOf(currentBeacon.getMinor()), locationBeacon[0], locationBeacon[1], paint);
 
                             canvas.drawCircle(locationBeacon[0], locationBeacon[1], (float) 0.02* widthPixels, paintBlue);
-                            mapInfo.append("Distance of beacon "+String.valueOf(minorVal)+" to customer's device: " + String.valueOf(distanceAvg.get(minorVal).floatValue())+"\n");
+                                Distancex[counter] = "Distance of beacon "+String.valueOf(minorVal)+" to customer's device: " + String.valueOf(distanceAvg.get(minorVal).floatValue())+"\n";
+                            counter++;
                             }
+
+                            }
+
+                            if( Distancex.length>1){
+
+                        Arrays.sort(Distancex);
+                        for( int ix = 0; ix < Distancex.length;ix++) {
+                            mapInfo.append(Distancex[ix]);
+                        }
                             }
                         if(beaconList.size()>2){
                             //System.out.println(beaconList.size());
@@ -305,7 +327,7 @@ public class MapPosActivity extends AppCompatActivity {
                         canvas.drawCircle(widthPixels *(userPos[0]/mapXSize), heightPixels * (userPos[1]/mapYSize),
                                 (float) 0.02 * widthPixels, paintRed);
                         }
-                        if(measurements > 50){
+                        if(measurements > 20){
                             recordPosition(userPos[0], userPos[1]);
                             measurements = 0;
                         }
@@ -572,11 +594,14 @@ public class MapPosActivity extends AppCompatActivity {
 
         }else{
             detect = "no";
+            detect = "no";
             paymentButton.setEnabled(false);
-
-            myCountDownTimer.cancel();
+            if(payStart) {
+                myCountDownTimer.cancel();
+            }
             progress_timer.setProgress(100);
             payStart = false;
+            paymentButton.setEnabled(false);
         }
 
         return new float[]{x_user, y_user, r_user};
@@ -589,6 +614,7 @@ public class MapPosActivity extends AppCompatActivity {
 
         // Add the distance to the ArrayList and maintain a certain size.
         double distance = Utils.computeAccuracy(beacon);
+        distance = distance*1.8;
         if(Mode == 0){
         distanceAvg.put(minorVal,distance);
         }
